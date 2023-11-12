@@ -5,8 +5,8 @@ The text is then sent to Miners which apply a text-to-text model to produce a tr
 The validator then evaluates the outputted translations using two Reward Models that are based on the methods from academic papers.
 
 The subnet has been designed to be able to accommodate numerous translation pairs. 
-The initial subnet supports English to Polish and Polish to English. 
-We have plans to soon support many other languages pairs. 
+The initial subnet supports pairs of languages including English, German, Spanish, Italian, and Polish. 
+We have plans to soon support many other languages. 
 ![BitTranslate Logo](https://www.bittranslate.io/wp-content/themes/lucrosus-child/assets/images/logos/logo_bitttranslate.svg)
 
 ## Installation
@@ -61,7 +61,7 @@ Used for: English, German and  Spanish
 
 ## Mining 
 ```bash
-python3 neurons/miners/m2m_miner.py --netuid 2  --axon.port  70000 --logging.debug
+python3 neurons/miners/m2m_miner.py --netuid 2 --axon.port 70000 --logging.debug --wallet.name default --wallet.hotkey default 
 ```
  Parameters
 
@@ -80,7 +80,7 @@ python3 neurons/miners/m2m_miner.py --netuid 2  --axon.port  70000 --logging.deb
 
 ## Validating  
 ```bash
-python3 neurons/validator.py --netuid 2  --axon.port  70000 --logging.debug
+python3 neurons/validator.py --netuid 2 --axon.port 70000 --logging.debug --wallet.name default --wallet.hotkey default 
 ```
  Parameters: 
 
