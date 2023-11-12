@@ -1,0 +1,8 @@
+torch
+bert-score
+transformers
+sentencepiece
+sentence-transformers
+numpy
+datasets
+langdetect
