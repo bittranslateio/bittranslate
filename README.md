@@ -11,7 +11,7 @@ We have plans to soon support many other languages pairs.
 
 ## Installation
 ```bash
-git clone https://github.com/LucrosusCapitalLPS/bittranslate.git
+git clone https://github.com/bittranslateio/bittranslate.git
 cd bittranslate
 pip install -e . 
 ```
