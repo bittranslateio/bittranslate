@@ -23,6 +23,7 @@ pip install bittensor
 ```
 ## Technical Overview
 ### Reward Models
+### Reward Models
 #### BertScore
 Based on the paper [BERTSCORE: EVALUATING TEXT GENERATION WITH BERT](https://arxiv.org/pdf/1904.09675.pdf) that uses [BertScore](https://github.com/Tiiiger/bert_score) to evaluate translated text.
 
@@ -34,7 +35,9 @@ Validators use text from following datasets as a prompt for a text generation mo
 
 #### Exams 
 Paper: [EXAMS: A Multi-subject High School Examinations Dataset for Cross-lingual and Multilingual Question Answering](https://aclanthology.org/2020.emnlp-main.438.pdf)
+
 Hugging Face: [exams](https://huggingface.co/datasets/exams)
+
 Used for: Italian and Polish 
 
 #### GermanQuAD
@@ -57,6 +60,23 @@ Paper: [On the cross-lingual transferability of monolingual representations](htt
 Hugging Face: [xquad](https://huggingface.co/datasets/xquad)
 
 Used for: English, German and  Spanish  
+
+### Models
+#### MGPT
+
+Paper: [mGPT: Few-Shot Learners Go Multilingual](https://arxiv.org/pdf/2204.07580.pdf)
+
+Hugging Face:[ai-forever/mGPT](https://huggingface.co/ai-forever/mGPT)
+
+Purpose: Validators use this model to generate original text that's sent to miners. 
+
+#### M2M
+
+Paper: [Beyond English-Centric Multilingual Machine Translation](https://arxiv.org/pdf/2010.11125.pdf)
+
+Hugging Face: [facebook/m2m100_1.2B](https://huggingface.co/facebook/m2m100_1.2B)
+
+Purpose: The default model miners use to perform translation.   
 
 
 ## Mining 
@@ -90,5 +110,5 @@ python3 neurons/validator.py --netuid 2 --axon.port 70000 --logging.debug --wall
 | max_char            | 512                 | Maximum allowed characters for translated text.                                                                                                                                    |
 | batch_size          | 2                   | The number of source texts that are sent to the miners every request. Miners by default ignore request with more than 2 source texts, so we do not recommend increasing this value |
 | miners_per_step     | 8                   | The number of miners to query in each step                                                                                                                                         |
-| save_tracking_steps | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                         |
+| track_steps | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                         |
 | miners_per_step     | "bittranslate_out/" | Output directory for tracked results.                                                                                                                                              |
