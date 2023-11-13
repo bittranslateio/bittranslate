@@ -69,7 +69,7 @@ def get_config():
     )
 
     parser.add_argument(
-        "--save_tracking_steps",
+        "--track_steps",
         type=int,
         default=100,
         help="Number of steps before tracked scores and texts are saved."
@@ -193,15 +193,19 @@ def update_scores_from_metagraph(
     for uid, hotkey in enumerate(hotkeys):
         if hotkey != metagraph.hotkeys[uid]:
             scores[uid] = median
+            bt.logging.debug(f"New key hotkey: {uid}. Setting score to {median}")
 
     # Did the most recent metagraph update increase the number of UIDs?
     # Occurs during creation of subnet as registrations fill up.
     if len(hotkeys) < len(metagraph.hotkeys):
         # Create new list of scores with correct length.
-        new_scores = [ 0 for _ in range(metagraph.n.item()) ]
+        new_scores = torch.zeros((metagraph.n))
         # Copy scores we do have onto new scores.
         min_len = min(len(hotkeys), len(scores))
         new_scores[:min_len] = scores[:min_len]
+
+        bt.logging.debug(f"UID length increased. Previous scores: {scores}. New scores: {new_scores}")
+
         # Update scores.
         scores = new_scores
     
@@ -396,12 +400,13 @@ def main( config ):
                 )
                 hotkeys=copy.deepcopy(metagraph.hotkeys)
 
-            if  (step + 1) % config.save_tracking_steps == 0:
-                try:
-                    validator.save_tracked_results()
-                except Exception as e:
-                    bt.logging.error("save_tracked_results:",  e)
-                    traceback.print_exc()
+            if (step + 1) % config.track_steps == 0:
+                with log_elapsed_time("save_tracked_results"):
+                    try:
+                        validator.save_tracked_results()
+                    except Exception as e:
+                        bt.logging.error("save_tracked_results:",  e)
+                        traceback.print_exc()
 
             with log_elapsed_time("sleeping"):
                 time.sleep(config.step_delay)

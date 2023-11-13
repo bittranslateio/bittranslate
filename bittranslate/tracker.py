@@ -14,8 +14,7 @@ class Tracker():
                 "min_scores": list(),
                 "mean": 0,
                 "average_max_score": 0,
-                "average_min_score": 0,
-                "count": 0
+                "average_min_score": 0
             }
 
             self.text_tracking[lang_pair_key] = {
