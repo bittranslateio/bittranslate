@@ -1,17 +1,16 @@
 # BitTranslate
-BitTranslate is a Subnet that rewards high-quality translations. 
-Validators produce unique text using a multilingual text generation model. 
+BitTranslate is a Subnet that rewards high-quality translations. Validators produce unique text using a multilingual text generation model. 
 The text is then sent to Miners which apply a text-to-text model to produce a translation. 
 The validator then evaluates the outputted translations using two Reward Models that are based on the methods from academic papers.
 
 The subnet has been designed to be able to accommodate numerous translation pairs. 
-The initial subnet supports pairs of languages including English, German, Spanish, Italian, and Polish. 
-We have plans to soon support many other languages. 
+The initial subnet supports pairs of languages including English, German, Spanish, Italian, and Polish.
+We have plans to soon support many other languages.
 ![BitTranslate Logo](https://www.bittranslate.io/wp-content/themes/lucrosus-child/assets/images/logos/logo_bitttranslate.svg)
 
 ## Installation
 ```bash
-git clone https://github.com/bittranslateio/bittranslate.git
+git clone https://github.com/LucrosusCapital/bittranslate.git
 cd bittranslate
 pip install -e . 
 ```
@@ -22,7 +21,7 @@ Bittensor must be installed separately.
 pip install bittensor
 ```
 ## Technical Overview
-### Reward Models
+
 ### Reward Models
 #### BertScore
 Based on the paper [BERTSCORE: EVALUATING TEXT GENERATION WITH BERT](https://arxiv.org/pdf/1904.09675.pdf) that uses [BertScore](https://github.com/Tiiiger/bert_score) to evaluate translated text.
@@ -66,7 +65,7 @@ Used for: English, German and  Spanish
 
 Paper: [mGPT: Few-Shot Learners Go Multilingual](https://arxiv.org/pdf/2204.07580.pdf)
 
-Hugging Face:[ai-forever/mGPT](https://huggingface.co/ai-forever/mGPT)
+Hugging Face: [ai-forever/mGPT](https://huggingface.co/ai-forever/mGPT)
 
 Purpose: Validators use this model to generate original text that's sent to miners. 
 
@@ -81,7 +80,7 @@ Purpose: The default model miners use to perform translation.
 
 ## Mining 
 ```bash
-python3 neurons/miners/m2m_miner.py --netuid 2 --axon.port 70000 --logging.debug --wallet.name default --wallet.hotkey default 
+python3 neurons/miners/m2m_miner.py --netuid 2  --axon.port  70000 --logging.debug
 ```
  Parameters
 
@@ -100,15 +99,15 @@ python3 neurons/miners/m2m_miner.py --netuid 2 --axon.port 70000 --logging.debug
 
 ## Validating  
 ```bash
-python3 neurons/validator.py --netuid 2 --axon.port 70000 --logging.debug --wallet.name default --wallet.hotkey default 
+python3 neurons/validator.py --netuid 2  --axon.port  70000 --logging.debug
 ```
  Parameters: 
 
-| Parameter           | Default             | Description                                                                                                                                                                        |
-|---------------------|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| device              | "cuda"              | "cuda" if detected else "cpu"                                                                                                                                                      |
-| max_char            | 512                 | Maximum allowed characters for translated text.                                                                                                                                    |
-| batch_size          | 2                   | The number of source texts that are sent to the miners every request. Miners by default ignore request with more than 2 source texts, so we do not recommend increasing this value |
-| miners_per_step     | 8                   | The number of miners to query in each step                                                                                                                                         |
-| track_steps | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                         |
-| miners_per_step     | "bittranslate_out/" | Output directory for tracked results.                                                                                                                                              |
+| Parameter       | Default             | Description                                                                                                                                                                        |
+|-----------------|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| device          | "cuda"              | "cuda" if detected else "cpu"                                                                                                                                                      |
+| max_char        | 512                 | Maximum allowed characters for translated text.                                                                                                                                    |
+| batch_size      | 2                   | The number of source texts that are sent to the miners every request. Miners by default ignore request with more than 2 source texts, so we do not recommend increasing this value |
+| miners_per_step | 8                   | The number of miners to query in each step                                                                                                                                         |
+| track_steps     | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                         |
+| out_dir         | "bittranslate_out/" | Output directory for tracked results.                                                                                                                                              |

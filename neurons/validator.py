@@ -193,7 +193,7 @@ def update_scores_from_metagraph(
     for uid, hotkey in enumerate(hotkeys):
         if hotkey != metagraph.hotkeys[uid]:
             scores[uid] = median
-            bt.logging.debug(f"New key hotkey: {uid}. Setting score to {median}")
+            bt.logging.debug(f"New hotkey: {uid}. Setting score to {median}")
 
     # Did the most recent metagraph update increase the number of UIDs?
     # Occurs during creation of subnet as registrations fill up.
@@ -412,7 +412,7 @@ def main( config ):
                 time.sleep(config.step_delay)
 
         # If we encounter an unexpected error, log it for debugging.
-        except RuntimeError as e:
+        except Exception as e:
             bt.logging.error(e)
             traceback.print_exc()
 
