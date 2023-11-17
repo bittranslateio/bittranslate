@@ -10,7 +10,7 @@ We have plans to soon support many other languages.
 
 ## Installation
 ```bash
-git clone https://github.com/LucrosusCapital/bittranslate.git
+git clone https://github.com/bittranslateio/bittranslate.git
 cd bittranslate
 pip install -e . 
 ```
