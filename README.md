@@ -27,7 +27,7 @@ This is the list of currently supported languages:
 We have plans to soon support many other languages.
 
 
-![BitTranslate Logo]([https://www.bittranslate.io/wp-content/themes/lucrosus-child/assets/images/logos/logo_bitttranslate.svg](https://github.com/bittranslateio/bittranslate/blob/main/bittranslate_logo_white.png))
+![BitTranslate Logo](https://github.com/bittranslateio/bittranslate/blob/main/bittranslate_logo_white.png)
 
 ## Installation
 ```bash
