@@ -9,7 +9,7 @@ from transformers import (
 import argparse
 import bittensor as bt
 from bittranslate.logging import log_elapsed_time
-
+from bittranslate import MiningTracker
 
 class M2MMiner(BaseMiner):
     @classmethod
@@ -32,14 +32,14 @@ class M2MMiner(BaseMiner):
         parser.add_argument(
             "--max_char",
             type=int,
-            default=512,
+            default=1024,
             help="The maximum allowed characters for an incoming request.",
         )
 
         parser.add_argument(
             "--max_length",
             type=int,
-            default=512,
+            default=1024,
             help="Maximum number of source tokens used for inference. Additional tokens will be truncated to this amount.",
         )
 
@@ -53,6 +53,19 @@ class M2MMiner(BaseMiner):
             ),
         )
 
+        parser.add_argument(
+            "--tracking_file",
+            type=str,
+            default="bittranslate.json",
+            help="File to output source texts and transated texts to, in JSON format",
+        )
+
+        parser.add_argument(
+            "--track_steps",
+            type=int,
+            default=100,
+            help="Number of steps before tracked texts are saved.")
+
     def __init__(self):
         super().__init__()
         bt.logging.info(f"Loading model {repr(self.config.model_name)}")
@@ -65,10 +78,18 @@ class M2MMiner(BaseMiner):
 
         self.tokenizer = M2M100Tokenizer.from_pretrained(self.config.model_name)
 
-        self._langs = ["de", "en", "es", "it", "pl"]
+        self._langs = ["ar", "bg", "de", "el", "en",
+                       "es", "hi", "hu", "it", "pl", "pt",
+                       "ro", "ru", "th",  "tr", "vi"]
+
         self._lang_pairs = list(permutations(self._langs, 2))
 
+        self._tracker = MiningTracker(lang_pairs=self._lang_pairs, n=100)
+
+        self.step = 0
+
     def forward(self, synapse: Translate) -> Translate:
+        bt.logging.info(f"\n\nStep: {self.step}")
         # Verify the synapse has under max_batch_size source texts
         # that are all under max_char length.
         self.verify_synapse_data(synapse)
@@ -119,6 +140,18 @@ class M2MMiner(BaseMiner):
 
         bt.logging.trace(f"output_synapse: {output_synapse}")
 
+        try:
+            self._tracker.track_texts(source_lang, target_lang, synapse.source_texts, decoded_texts)
+        except Exception as e:
+            bt.logging.error("_tracker.track_texts():", e)
+
+        if (self.step + 1) % self.config.track_steps == 0:
+            try:
+                self._tracker.texts_to_json(self.config.tracking_file)
+            except Exception as e:
+                bt.logging.error("_tracker.texts_to_json(): ", e)
+
+        self.step += 1
         return output_synapse
 
 if __name__ == "__main__":

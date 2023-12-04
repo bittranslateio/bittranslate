@@ -89,6 +89,14 @@ def get_config(parser):
         default=1024,
     )
 
+    parser.add_argument(
+        "--miner.blacklist.max_requests_per_min",
+        type=int,
+        default=4,
+        help=(
+            "The maximum allowed requests a validator can send to a miner per minute before getting blacklisted."
+        ),
+    )
 
     # Adds override arguments for network and netuid.
     parser.add_argument('--netuid', type=int, default=2, help="The chain subnet uid.")
