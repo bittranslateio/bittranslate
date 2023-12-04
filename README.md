@@ -25,10 +25,7 @@ This is the list of currently supported languages:
 - Bulgarian: **"bg"**
 
 We have plans to soon support many other languages.
-
-
 ![BitTranslate Logo](https://github.com/bittranslateio/bittranslate/blob/main/bittranslate_logo_white.png)
-
 ## Installation
 ```bash
 git clone https://github.com/LucrosusCapital/bittranslate.git
