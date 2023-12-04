@@ -4,7 +4,26 @@ The text is then sent to Miners which apply a text-to-text model to produce a tr
 The validator then evaluates the outputted translations using two Reward Models that are based on the methods from academic papers.
 
 The subnet has been designed to be able to accommodate numerous translation pairs. 
-The initial subnet supports pairs of languages including English, German, Spanish, Italian, and Polish.
+
+This is the list of currently supported languages:
+
+English: **"en"**
+Spanish:  **"es"**
+German: **"de"**
+Italian: **"it"**
+Arabic: **"ar"**
+Hindi: **"hi"**
+Polish: **"pl"**
+Russian: **"ru"**
+Turkish: **"tr"**
+Greek: **"el"**
+Thai: **"th"**
+Vietnamese: **"vi"**
+Hungarian: **"hu"**
+Romanian: **"ro"**
+Portuguese: **"pt"**
+Bulgarian: **"bg"**
+
 We have plans to soon support many other languages.
 ![BitTranslate Logo](https://www.bittranslate.io/wp-content/themes/lucrosus-child/assets/images/logos/logo_bitttranslate.svg)
 
@@ -44,21 +63,17 @@ Paper: [GermanQuAD and GermanDPR: Improving Non-English Question Answering and P
 
 Hugging Face: [deepset/germanquad](https://huggingface.co/datasets/deepset/germanquad)
 
-Used for: German 
-
 #### PeerSum
 Paper: [Summarizing Multiple Documents with Conversational Structure for Meta-review Generation](https://arxiv.org/pdf/2305.01498.pdf)
 
 Hugging Face: [oaimli/PeerSum](https://huggingface.co/datasets/oaimli/PeerSum)
 
-Used for: English 
 
 #### xQuAD
 Paper: [On the cross-lingual transferability of monolingual representations](https://arxiv.org/pdf/1910.11856.pdf)
 
 Hugging Face: [xquad](https://huggingface.co/datasets/xquad)
-
-Used for: English, German and  Spanish  
+ 
 
 ### Models
 #### MGPT
@@ -79,18 +94,35 @@ Purpose: The default model miners use to perform translation.
 
 
 ## Mining 
+
+To start mining on the Bittranslate subnetwork you need to create your coldkey, hotkey, and register it on netuid 2.
+
+Creating Coldkey
 ```bash
-python3 neurons/miners/m2m_miner.py --netuid 2  --axon.port  70000 --logging.debug
+btcli w new_coldkey
+```
+Creating Hotkey
+```bash
+btcli w new_hotkey
+```
+Registering your Hotkey
+```bash
+btcli s register --netuid 2 --wallet.name YOUR_COLDKEY --wallet.hotkey YOUR_HOTKEY
+```
+Now you are ready to start mining!
+```bash
+python3 neurons/miners/m2m_miner.py --netuid 2 --axon.port 70000 --logging.debug
 ```
  Parameters
 
 | Parameter                                 | Default                | Description                                                                                          |
 |-------------------------------------------|------------------------|------------------------------------------------------------------------------------------------------|
-| device                                    | "cuda"                 | What device to use for the model.                                                                    | 
+| device                                    | "cuda"                 | What device to use for the model                                                                     | 
 | max_batch_size                            | 2                      | The maximum allowed batch size (number of source texts) for an incoming request                      |
 | max_char                                  | 1024                   | Maximum allowed characters for source text.                                                          |
 | max_length                                | 1024                   | The token length that source text will be truncated to                                               |
 | model_name                                | "facebook/m2m100_1.2B" | Either a Hugging Face ID or a path to a local path that contains both the model and tokenizer        |
+| tracking_file                             | "bittranslate.json"    | File to output source texts and translated texts to, in JSON format                                  |
 | miner.blacklist.whitelist                 | []                     | Whitelisted keys                                                                                     |
 | miner.blacklist.blacklist                 | []                     | Blacklisted keys                                                                                     |
 | miner.blacklist.force_validator_permit    | False                  | If True, requests not from validators  will be blacklisted                                           |
@@ -130,11 +162,11 @@ response = requests.post(
         json={
             "source_texts": ["hello world"], # you may provide a list of texts. Do not exceed 512 characters per source text or include more than 2 source texts. 
             "source_lang": "en", # Language code for the source text. 
-            "target_lang":  "pl" # Language code for the translated text. 
+            "target_lang":  "es" # Language code for the translated text. 
         }
     )
 print(response.json()) 
-# {'detail': 'success', 'translated_texts': ['Witaj Świat']}
+# {'detail': 'success', 'translated_texts': ['Hola Mundo']}
 ```
 
 ### Config
