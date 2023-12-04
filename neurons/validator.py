@@ -19,19 +19,24 @@
 # Bittensor Validator Template:
 
 import os
-import time
 import torch
 import argparse
 import traceback
 import bittensor as bt
 import random
-from typing import List
+from typing import List, Optional
 import copy
+import anyio
+import anyio.to_thread
+from dataclasses import dataclass
+import threading
+from queue import SimpleQueue, Empty
 
 from bittranslate import Validator
 from bittranslate.logging import log_elapsed_time
 import bittranslate.constants as constants
 from neurons.protocol import Translate
+from neurons.api_server import ApiServer
 
 def get_config():
 
@@ -43,7 +48,7 @@ def get_config():
     parser.add_argument(
         "--max_char",
         type=int,
-        default=512,
+        default=1024,
         help="The maximum allowed characters for an incoming request.",
     )
 
@@ -82,12 +87,46 @@ def get_config():
         help="Output directory for tracked results."
     )
 
+    parser.add_argument(
+        "--enable_api",
+        action="store_true",
+        help="If set, a callable API will be activated."
+    )
+
+    parser.add_argument(
+        "--score_api",
+        action="store_true",
+        help="If set,  responses from API requests will be used to modify scores."
+    )
+
+
+    parser.add_argument(
+        "--api_json",
+        type=str,
+        default="neurons/api.json",
+        help="A path to a a config file for the API."
+    )
+
+    parser.add_argument(
+        "--no_artificial_eval",
+        action="store_true",
+        help="If set, artificial data will not be sent to miners for the purpose of scoring. We only recommend setting this to true to when debugging the API."
+    )
+
+    parser.add_argument(
+        "--ngrok_domain",
+        help=(
+            "If set, expose the API over 'ngrok' to the specified domain."
+        )
+    )
+
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
     bt.logging.add_args(parser)
     # Adds wallet specific arguments i.e. --wallet.name ..., --wallet.hotkey ./. or --wallet.path ...
     bt.wallet.add_args(parser)
+    bt.axon.add_args(parser)
     # Parse the config (will take command-line arguments if provided)
     # To print help message, run python3 template/miner.py --help
     config =  bt.config(parser)
@@ -211,6 +250,31 @@ def update_scores_from_metagraph(
     
     return scores
 
+@dataclass
+class SynapseWithEvent:
+    """ Object that API server can send to main thread to be serviced. """
+
+    input_synapse: Translate
+    event: threading.Event
+    output_synapse: Translate
+
+api_queue = SimpleQueue() # Queue of SynapseEventPair
+
+async def forward(synapse: Translate) -> Translate:
+    """ Forward function for API server. """
+
+    synapse_with_event = SynapseWithEvent(
+        input_synapse=synapse,
+        event=threading.Event(),
+        output_synapse=Translate(source_lang="en", target_lang="pl", source_texts=["sample"])
+    )
+    api_queue.put(synapse_with_event)
+
+    # Wait until the main thread marks this synapse as processed.
+    await anyio.to_thread.run_sync(synapse_with_event.event.wait)
+
+    return synapse_with_event.output_synapse
+
 def main( config ):
     # Set up logging with the provided configuration and directory.
     bt.logging(config=config, logging_dir=config.full_path)
@@ -238,6 +302,8 @@ def main( config ):
     bt.logging.info(f"Metagraph: {metagraph}")
     hotkeys: List[str] = copy.deepcopy(metagraph.hotkeys)
 
+
+
     if wallet.hotkey.ss58_address not in metagraph.hotkeys:
         bt.logging.error(f"\nYour validator: {wallet} if not registered to chain connection: {subtensor} \nRun btcli register and try again.")
         exit()
@@ -257,10 +323,41 @@ def main( config ):
     ## Custom Initialization
     validator = Validator(device=config.device, out_dir=config.out_dir)
 
+    if config.enable_api:
+        # external requests
+        api_server = ApiServer(
+            axon_port=config.axon.port,
+            forward_fn=forward,
+            api_json=config.api_json,
+            lang_pairs=validator._lang_pairs,
+            max_char=config.max_char,
+            ngrok_domain=config.ngrok_domain
+        )
+        api_server.start()
+
+
     bt.logging.info("Starting validator loop.")
     step = 0
     while True:
         try:
+            bt.logging.info(f"\n\nStep: {step}")
+            # We sleep at the top of the loop such that the queue access is more readable.
+            # This results in one extra delay at the beginning of a validator's startup,
+            # which is not a significant issue.
+            with log_elapsed_time("sleeping"):
+                synapse_with_event: Optional[SynapseWithEvent] = None
+                try:
+                    synapse_with_event = api_queue.get(timeout=config.step_delay)
+                except Empty:
+                    # No synapse from API server.
+                    pass
+
+            if synapse_with_event is not None:
+                bt.logging.info("Processing synapse from API server")
+            else:
+                if config.no_artificial_eval:
+                    bt.logging.info("Since there are no API request  and '--no_artificial_eval' is True, no request are sent to miners")
+                    continue
             # Sample axons by UID such that we can easily
             # look them up later for rewards.
             bt.logging.debug(f"metagraph.n.item(): {metagraph.n.item()}")
@@ -290,20 +387,25 @@ def main( config ):
 
             bt.logging.trace(f"chosen_axons: {chosen_axons}")
 
+            if synapse_with_event is None:
+                with log_elapsed_time("generate_case"):
+                    source_lang, target_lang, source_texts = (
+                        validator.generate_cases(count=config.batch_size)
+                    )
+            else:
+                source_lang = synapse_with_event.input_synapse.source_lang
+                target_lang = synapse_with_event.input_synapse.target_lang
+                source_texts = synapse_with_event.input_synapse.source_texts
 
-            with log_elapsed_time("generate_case"):
-                source_lang, target_lang, source_texts = (
-                    validator.generate_cases(count=config.batch_size)
-                )
-                bt.logging.debug(f"source_lang: {source_lang}")
-                bt.logging.debug(f"target_lang: {target_lang}")
+            bt.logging.debug(f"source_lang: {source_lang}")
+            bt.logging.debug(f"target_lang: {target_lang}")
 
-                try:
-                    bt.logging.debug(f"source_texts[0][0:50]: {source_texts[0][:50]}")
-                except Exception as e:
-                    bt.logging.debug("source_texts[0][0:50]: INVALID")
+            try:
+                bt.logging.debug(f"source_texts[0][0:50]: {source_texts[0][:50]}")
+            except Exception as e:
+                bt.logging.debug("source_texts[0][0:50]: INVALID")
 
-                bt.logging.trace(f"source_texts: {source_texts}")
+            bt.logging.trace(f"source_texts: {source_texts}")
 
 
             with log_elapsed_time("dendrite.query"):
@@ -329,7 +431,16 @@ def main( config ):
                 bt.logging.trace(f"responses: {responses}")
 
 
-            # Reorganize so that we have a list of lists, 
+
+            # We only skip scoring if:
+            # a) we are currently servicing an API/user request
+            # and b) the "--score_api" flag has not been set
+            skip_scoring = (
+                (synapse_with_event is not None)
+                and not config.score_api
+            )
+
+            # Reorganize so that we have a list of lists,
             # where  each sublist contains the translations
             # for a given source text.
             translations = build_translations_per_source_text(responses)
@@ -338,20 +449,38 @@ def main( config ):
             # Run the Filtering and Reward Models
             with log_elapsed_time("score_responses"):
                 # These scores align to chosen_axons, NOT miner UIDs.
-                raw_scores = validator.score(source_texts, translations=translations, source_lang=source_lang, target_lang=target_lang)
+                raw_scores, top_translations, top_scores = validator.score(
+                    source_texts,
+                    translations=translations,
+                    source_lang=source_lang,
+                    target_lang=target_lang
+                )
 
-            bt.logging.debug(f"{raw_scores=}")
+            bt.logging.debug(f"raw_scores: {raw_scores=}")
+            bt.logging.trace(f"top_translations: {top_translations=}")
+            bt.logging.trace(f"top_scores: {top_scores=}")
 
-            bt.logging.debug(f"before: {scores=}")
+            if not skip_scoring:
+                bt.logging.debug(f"before: {scores=}")
 
-            # Update score by 1-alpha amount
-            for uid, score in zip(chosen_uids,raw_scores):
-                # These scores align to miner UIDs, NOT chosen_axons.
-                scores[uid] = alpha * scores[uid] + (1 - alpha) * score
+                # Update score by 1-alpha amount
+                for uid, score in zip(chosen_uids,raw_scores):
+                    # These scores align to miner UIDs, NOT chosen_axons.
+                    scores[uid] = alpha * scores[uid] + (1 - alpha) * score
 
-            bt.logging.debug(f"after: {scores=}")
+                bt.logging.debug(f"after: {scores=}")
 
-            # Periodically update the weights on the Bittensor blockchain.
+                # Periodically update the weights on the Bittensor blockchain.
+
+            # Save outputs to object shared with API server
+            # and flag event such that API server
+            # knows these outputs are ready.
+            if synapse_with_event is not None:
+                synapse_with_event.output_synapse = Translate(source_lang=source_lang,
+                                                              target_lang=target_lang,
+                                                              source_texts=source_texts,
+                                                              translated_texts=top_translations)
+                synapse_with_event.event.set()
 
             if (step + 1) % 100 == 0:
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
@@ -385,7 +514,6 @@ def main( config ):
 
             # End the current step and prepare for the next iteration.
             step += 1
-            bt.logging.info(f"{step=}")
 
             # Resync our local state with the latest state from the blockchain.
             if (step + 1) % 20 == 0:
@@ -407,9 +535,6 @@ def main( config ):
                     except Exception as e:
                         bt.logging.error("save_tracked_results:",  e)
                         traceback.print_exc()
-
-            with log_elapsed_time("sleeping"):
-                time.sleep(config.step_delay)
 
         # If we encounter an unexpected error, log it for debugging.
         except Exception as e:

@@ -49,7 +49,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='bittranslate',
-    version="0.0.1",
+    version="1.0.0",
     description='A subnet for machine translation',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -62,7 +62,7 @@ setup(
     data_files=[(
         'requirements', ['requirements/bittranslate.txt']
     )],
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     install_requires=requirements,
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -71,7 +71,6 @@ setup(
         # Pick your license as you wish
         "License :: OSI Approved :: Apache Software License",
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Topic :: Scientific/Engineering',

@@ -12,7 +12,7 @@ from bittranslate.prompt_dataset.exams import Exams
 from bittranslate.prompt_dataset.peer_sum import PeerSum
 from bittranslate.prompt_dataset.prompt_dataset import PromptDataset
 from bittranslate.prompt_dataset.xquad import XQuAD
-from bittranslate.tracker import  Tracker
+from bittranslate.tracker import ValidatorTracker
 from bittranslate.constants import TRACKER_HISTORY_COUNT
 
 class Validator:
@@ -21,11 +21,19 @@ class Validator:
 
         self._reward_weights = [0.5, 0.5]
         self._mgpt_pipeline = pipeline("text-generation", "ai-forever/mGPT", device=device)
-        self._langs = ["de", "en", "es", "it", "pl"]
-        self._lang_pairs = list(permutations(self._langs, 2))
-        self.tracker = Tracker(self._lang_pairs, TRACKER_HISTORY_COUNT)
 
-        self.out_dir= out_dir
+        self._langs = ["ar", "bg", "de", "el", "en",
+                       "es", "hi", "hu", "it", "pl", "pt",
+                       "ro", "ru", "th",  "tr", "vi"]
+        self._prior_langs = ["de", "en", "es", "it", "pl"]
+
+        self._lang_pairs = list(permutations(self._langs, 2))
+
+        self._prior_lang_pairs = list(permutations(self._prior_langs, 2))
+
+        self.tracker = ValidatorTracker(self._lang_pairs, TRACKER_HISTORY_COUNT)
+
+        self.out_dir = out_dir
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
 
@@ -34,23 +42,37 @@ class Validator:
         peer_sum = PeerSum()
         xquad = XQuAD()
 
-        self._datasets = {"de": [german_quad, xquad],
+        self._datasets = {"ar": [xquad],
+                          "bg": [exams],
+                          "de": [german_quad, xquad],
+                          "el": [xquad],
                           "en": [peer_sum, xquad],
                           "es": [xquad],
+                          "hi": [xquad],
+                          "hu": [exams],
                           "it": [exams],
-                          "pl": [exams]
+                          "pl": [exams],
+                          "pt": [exams],
+                          "ro": [xquad],
+                          "ru": [xquad],
+                          "th": [xquad],
+                          "tr": [exams, xquad],
+                          "vi": [xquad]
                           }
 
     def score(self, sources: List[str], translations: List[List[str]], source_lang: str, target_lang: str):
         len_sources = len(sources)
         miners_count = len(translations[0])
         all_scores = [0]*miners_count
-        top_max_score = 0
-        top_max_source = ""
-        top_max_target = ""
-        top_min_score = 1.1
-        top_min_source = ""
-        top_min_target = ""
+        overall_top_max_score = 0
+        overall_top_max_source = ""
+        overall_top_max_target = ""
+        overall_top_min_score = 1.1
+        overall_top_min_source = ""
+        overall_top_min_target = ""
+
+        top_translations = []
+        top_scores = []
 
         for s, t in zip(sources, translations):
             # s: single source text
@@ -60,23 +82,23 @@ class Validator:
             scores = self.single_score(s, t, target_lang)
             all_scores = [a + b for a, b in zip(all_scores, scores)]
 
-            # Tracking:
-            try:  # nonessential code:
-                max_score = max(scores)
-                min_score = min(scores)
-                max_score_index = scores.index(max_score)
-                min_score_index = scores.index(min_score)
-                if max_score > top_max_score:
-                    top_max_score = max_score
-                    top_max_source = s
-                    top_max_target = t[max_score_index]
-                if min_score < top_min_score:
-                    top_min_score = min_score
-                    top_min_source = s
-                    top_min_target = t[min_score_index]
-            except Exception as e:
-                print(f"Error (non-essential code): computing min/max source and target texts", file=sys.stderr)
-                print(e, file=sys.stderr)
+            max_score = max(scores)
+            min_score = min(scores)
+            max_score_index = scores.index(max_score)
+            min_score_index = scores.index(min_score)
+            max_score_value = t[max_score_index]
+            top_translations.append(max_score_value)
+            top_scores.append(max_score)
+            if max_score > overall_top_max_score:
+                overall_top_max_score = max_score
+                overall_top_max_source = s
+                overall_top_max_target = max_score_value
+
+            min_score_value = t[min_score_index]
+            if min_score < overall_top_min_score:
+                overall_top_min_score = min_score
+                overall_top_min_source = s
+                overall_top_min_target = min_score_value
 
         final_scores = [score/len_sources for score in all_scores]
 
@@ -89,12 +111,18 @@ class Validator:
 
         # Track texts
         try:  # nonessential code:
-            self.tracker.track_texts(source_lang, target_lang,  top_min_source, top_min_target, top_min_score, top_max_source, top_max_target, top_max_score)
+            self.tracker.track_texts(source_lang, target_lang,
+                                     overall_top_min_source,
+                                     overall_top_min_target,
+                                     overall_top_min_score,
+                                     overall_top_max_source,
+                                     overall_top_max_target,
+                                     overall_top_max_score)
         except Exception as e:
             print(f"Error (non-essential code): tracker.track_texts()", file=sys.stderr)
             print(e, file=sys.stderr)
 
-        return final_scores
+        return final_scores, top_translations, top_scores
 
     def single_score(self, source: str, translations: List[str], target_lang: str) -> List[float]:
 
@@ -131,10 +159,8 @@ class Validator:
         return norm_scores.tolist()
 
     def _get_source_dataset(self) -> (PromptDataset, str, str):
-        random_lang_pair_index = random.randint(0, len(self._lang_pairs) - 1)
-        random_lang_pair = self._lang_pairs[random_lang_pair_index]
-        source_lang = random_lang_pair[0]
-        target_lang = random_lang_pair[1]
+
+        source_lang, target_lang = self._select_lang_pair()
 
         source_datasets = self._datasets[source_lang]
 
@@ -193,3 +219,19 @@ class Validator:
         self.tracker.scores_to_json(out_scores_path)
         out_texts_path = self.out_dir + "texts.json"
         self.tracker.texts_to_json(out_texts_path)
+
+    def _select_lang_pair(self):
+        new_lang_pairs = [lang for lang in self._lang_pairs if lang not in self._prior_lang_pairs]
+
+        random_0_1 = random.random()
+        if random_0_1 < 0.95:
+            # Use prior language pairs 95% of the time
+            lang_pairs = self._prior_lang_pairs
+        else:
+            lang_pairs = new_lang_pairs
+
+        random_lang_pair_index = random.randint(0, len(lang_pairs) - 1)
+        random_lang_pair = lang_pairs[random_lang_pair_index]
+        source_lang = random_lang_pair[0]
+        target_lang = random_lang_pair[1]
+        return source_lang, target_lang

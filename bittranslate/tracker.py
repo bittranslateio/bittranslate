@@ -1,8 +1,28 @@
 import json
 
 class Tracker():
+    def __init__(self, lang_pairs, n =100):
+        self.lang_pairs = lang_pairs
+        self.n = n
 
+    @staticmethod
+    def _create_lang_pair_key(source_lang: str, target_lang: str) -> str:
+        return source_lang + "_" + target_lang
+
+    def _append_to_list(self, l, value):
+         if type(value) == float:
+             l.append(round(value, 4))
+         else:
+             l.append(value)
+
+         if len(l) > self.n:
+             l.pop(0)
+
+
+
+class ValidatorTracker(Tracker):
     def __init__(self, lang_pairs, n=100):
+        super().__init__(lang_pairs, n)
         self.score_tracking = {}
         self.text_tracking = {}
 
@@ -22,9 +42,7 @@ class Tracker():
                 "max": {"sources": list(), "translations": list(), "scores": list()}}
 
             self.n = n
-    @staticmethod
-    def _create_lang_pair_key(source_text: str, target_text: str) -> str:
-        return source_text + "_" + target_text
+
 
     def track_scores(self, source_lang, target_lang, scores):
 
@@ -68,7 +86,6 @@ class Tracker():
         self._append_to_list(tack_lang_pair_max["translations"], top_max_target)
         self._append_to_list(tack_lang_pair_max["scores"], top_max_score)
 
-
     def scores_to_json(self, output_file: str = "scores_output.json"):
         json_output = json.dumps(self.score_tracking, indent=4)
         with open(output_file, 'w') as file:
@@ -79,15 +96,28 @@ class Tracker():
         with open(output_file, 'w') as file:
             file.write(json_output)
 
-    def _append_to_list(self, l, value):
-        if type(value) == float:
-            l.append(round(value, 4))
-        else:
-            l.append(value)
+class MiningTracker(Tracker):
+    def __init__(self, lang_pairs, n=100):
+        super().__init__(lang_pairs, n)
 
-        if len(l) > self.n:
-            l.pop(0)
+        self.text_tracking = {}
 
+        for sublist in lang_pairs:
+            lang_pair_key = self._create_lang_pair_key(sublist[0], sublist[1])
+            self.text_tracking[lang_pair_key] = list()
+
+
+    def track_texts(self, source_lang, target_lang,  source_texts, translated_texts):
+        result = {
+            "source_texts": source_texts,
+            "translated_texts": translated_texts}
+        lang_pair_key = self._create_lang_pair_key(source_lang, target_lang)
+        self._append_to_list(self.text_tracking[lang_pair_key], result)
+
+    def texts_to_json(self, output_file: str = "texts_output.json"):
+        json_output = json.dumps(self.text_tracking, indent=4)
+        with open(output_file, 'w') as file:
+            file.write(json_output)
 
 
 

@@ -45,7 +45,7 @@ def test_scores_en_pl():
 
     target_lang = "pl"
 
-    scores = validator.score(source_texts, translated_texts, source_lang, target_lang )
+    scores, _, _ = validator.score(source_texts, translated_texts, source_lang, target_lang )
     assert type(scores) == list
     assert all(isinstance(score, float) for score in scores)
     # translated texts is in descending order by quality of the translations
@@ -55,7 +55,7 @@ def test_scores_en_pl():
     for miner_results in translated_texts_reversed:
         miner_results.reverse()
 
-    scores_reversed = validator.score(source_texts, translated_texts_reversed, source_lang, target_lang)
+    scores_reversed, _, _ = validator.score(source_texts, translated_texts_reversed, source_lang, target_lang)
     assert all(scores_reversed[i] < scores_reversed[i + 1] for i in range(len(scores_reversed) - 1))
     validator.save_tracked_results()
 
@@ -69,15 +69,18 @@ def test_scores_pl_en():
                         "This is pencil.",
                         "To jest niewłaściwy język."],
 
-                        ["I am writing software. ",
+                        ["I am writing software.",
                         "I am coding right now.",
                         "I'm standing at the desk.",
                         "Zły język."]
                     ]
+    source_lang = "pl"
     target_lang = "en"
 
-    scores = validator.score(source_texts, translated_texts, target_lang )
-    print(scores)
+    scores, top_translations, _ = validator.score(source_texts, translated_texts, source_lang, target_lang )
+    assert top_translations[0] == "This is example text."
+    assert top_translations[1] == "I am writing software."
+
     assert type(scores) == list
     assert all(isinstance(score, float) for score in scores)
     # translated texts is in descending order by quality of the translations
@@ -87,7 +90,7 @@ def test_scores_pl_en():
     for miner_results in translated_texts_reversed:
         miner_results.reverse()
 
-    scores_reversed = validator.score(source_texts, translated_texts_reversed, target_lang)
+    scores_reversed, _, _ = validator.score(source_texts, translated_texts_reversed, source_lang, target_lang)
     print(scores_reversed)
     print(translated_texts_reversed)
     assert all(scores_reversed[i] < scores_reversed[i + 1] for i in range(len(scores_reversed) - 1))
