@@ -7,22 +7,22 @@ The subnet has been designed to be able to accommodate numerous translation pair
 
 This is the list of currently supported languages:
 
-English: **"en"**
-Spanish:  **"es"**
-German: **"de"**
-Italian: **"it"**
-Arabic: **"ar"**
-Hindi: **"hi"**
-Polish: **"pl"**
-Russian: **"ru"**
-Turkish: **"tr"**
-Greek: **"el"**
-Thai: **"th"**
-Vietnamese: **"vi"**
-Hungarian: **"hu"**
-Romanian: **"ro"**
-Portuguese: **"pt"**
-Bulgarian: **"bg"**
+- English: **"en"**
+- Spanish: **"es"**
+- German: **"de"**
+- Italian: **"it"**
+- Arabic: **"ar"**
+- Hindi: **"hi"**
+- Polish: **"pl"**
+- Russian: **"ru"**
+- Turkish: **"tr"**
+- Greek: **"el"**
+- Thai: **"th"**
+- Vietnamese: **"vi"**
+- Hungarian: **"hu"**
+- Romanian: **"ro"**
+- Portuguese: **"pt"**
+- Bulgarian: **"bg"**
 
 We have plans to soon support many other languages.
 ![BitTranslate Logo](https://www.bittranslate.io/wp-content/themes/lucrosus-child/assets/images/logos/logo_bitttranslate.svg)
