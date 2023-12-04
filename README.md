@@ -58,7 +58,6 @@ Paper: [EXAMS: A Multi-subject High School Examinations Dataset for Cross-lingua
 
 Hugging Face: [exams](https://huggingface.co/datasets/exams)
 
-Used for: Italian and Polish 
 
 #### GermanQuAD
 Paper: [GermanQuAD and GermanDPR: Improving Non-English Question Answering and Passage Retrieval](https://aclanthology.org/2021.mrqa-1.4.pdf)
