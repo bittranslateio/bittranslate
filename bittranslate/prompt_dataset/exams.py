@@ -33,7 +33,7 @@ class Exams(PromptDataset):
             for shorthand, language in LANGUAGE_SHORTHANDS.items()
         }
 
-    def sample_case(self, language="en") -> str:
+    def sample_case(self, language="vi") -> str:
         if language not in self._lang_datasets:
             raise ValueError(
                 f"{language} is an invalid language. "
