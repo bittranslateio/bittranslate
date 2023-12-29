@@ -66,6 +66,12 @@ class M2MMiner(BaseMiner):
             default=100,
             help="Number of steps before tracked texts are saved.")
 
+        parser.add_argument(
+            "--disable_set_weight",
+            action="store_true",
+            help="If true, weights will not be updated. "
+                 "Can be used to run a miner in addition to a validator from the same key.")
+
     def __init__(self):
         super().__init__()
         bt.logging.info(f"Loading model {repr(self.config.model_name)}")
@@ -80,7 +86,7 @@ class M2MMiner(BaseMiner):
 
         self._langs = ["ar", "bg", "de", "el", "en",
                        "es", "hi", "hu", "it", "pl", "pt",
-                       "ro", "ru", "th",  "tr", "vi"]
+                       "ro", "ru", "th",  "tr", "vi", "fr"]
 
         self._lang_pairs = list(permutations(self._langs, 2))
 

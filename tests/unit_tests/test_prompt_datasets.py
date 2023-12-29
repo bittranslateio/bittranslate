@@ -1,4 +1,4 @@
-from bittranslate import Exams, XQuAD, PeerSum,  GermanQuAD
+from bittranslate import Exams, XQuAD, PeerSum,  GermanQuAD, MKqa
 import pytest
 from langdetect import detect
 
@@ -44,3 +44,13 @@ def test_xquad():
         assert expect_lang == got_lang
     with pytest.raises(ValueError):
         result = xquad.sample_case("pl")
+
+def test_mkqa():
+    mkqa = MKqa()
+    result = mkqa.sample_case("fr")
+    assert type(result) == str
+    lang = detect(result)
+    assert lang == "fr"
+
+    with pytest.raises(ValueError):
+        result = mkqa.sample_case("xx")

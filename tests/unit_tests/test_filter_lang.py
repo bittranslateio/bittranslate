@@ -11,14 +11,14 @@ def test_filter_lang():
     assert result_pl == expected_result_pl
 
     pl_source_text = ["Napiszmy dzisiaj trochę kodu."]*4
-    scores_pl_en, _, _ = validator.score(pl_source_text, [translated_text], "en")
+    scores_pl_en, _, _ = validator.score(pl_source_text, [translated_text], "pl", "en")
     assert scores_pl_en[0] > 0
     assert scores_pl_en[1] == 0
     assert scores_pl_en[2] > 0
     assert scores_pl_en[3] == 0
 
     en_source_text = ["Let's write some code today."]*4
-    scores_pl_en, _, _ = validator.score(en_source_text, [translated_text], "pl")
+    scores_pl_en, _, _ = validator.score(en_source_text, [translated_text], "en", "pl")
     assert scores_pl_en[0] == 0
     assert scores_pl_en[1] > 0
     assert scores_pl_en[2] == 0

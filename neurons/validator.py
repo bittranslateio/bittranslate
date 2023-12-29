@@ -318,7 +318,7 @@ def main( config ):
     scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
     bt.logging.info(f"Weights: {scores}")
 
-    alpha = 0.98
+    alpha = 0.995
 
     ## Custom Initialization
     validator = Validator(device=config.device, out_dir=config.out_dir)
@@ -366,8 +366,7 @@ def main( config ):
                 for uid in range(metagraph.n.item())
                 if check_uid_availability(
                     metagraph=metagraph,
-                    uid=uid,
-                    vpermit_tao_limit=constants.VPERMIT_TAO_LIMIT
+                    uid=uid
                 )
             ]
 
@@ -547,7 +546,7 @@ def main( config ):
             exit()
 
 def check_uid_availability(
-        metagraph: "bt.metagraph", uid: int, vpermit_tao_limit: int
+        metagraph: "bt.metagraph", uid: int
 ) -> bool:
     """Check if uid is available. The UID should be available if it is serving and has less than vpermit_tao_limit stake
     Args:
@@ -562,10 +561,6 @@ def check_uid_availability(
     # Filter non serving axons.
     if not metagraph.axons[uid].is_serving:
         return False
-    # Filter validator permit > 1024 stake.
-    if metagraph.validator_permit[uid]:
-        if metagraph.S[uid] > vpermit_tao_limit:
-            return False
     # Available otherwise.
     return True
 

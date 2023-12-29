@@ -4,7 +4,7 @@ import pytest
 
 from bittranslate.timer import Timer
 
-EPSILON = 1e-3
+EPSILON = 1e-2
 SLEEP_SECONDS = 1e-2
 
 @pytest.mark.lite

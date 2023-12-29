@@ -155,17 +155,22 @@ class BaseMiner:
                     bt.logging.info(log)
                     
                 blocks_per_set_weights = 100
+
+
                 if (
                     current_block - last_updated_block 
                     >= blocks_per_set_weights
                 ):
-                    # Miner sets its own weights.
-                    set_weights(
-                        subtensor=self.subtensor,
-                        netuid=self.config.netuid,
-                        uid=self.my_subnet_uid,
-                        wallet=self.wallet,
-                    )
+                    if self.config.disable_set_weight:
+                        bt.logging.info("Not setting weights")
+                    else:
+                        # Miner sets its own weights.
+                        set_weights(
+                            subtensor=self.subtensor,
+                            netuid=self.config.netuid,
+                            uid=self.my_subnet_uid,
+                            wallet=self.wallet,
+                        )
                     last_updated_block = current_block
                     
                 step += 1

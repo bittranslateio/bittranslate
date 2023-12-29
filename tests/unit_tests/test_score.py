@@ -5,7 +5,7 @@ from bittranslate import Validator
 
 def run_test_score(reward_model: Union[RewardModel, Validator], is_validator: bool = False):
     if is_validator:
-        result = reward_model.single_score(SOURCE_TEXT, TRANSLATED_TEXTS, source_lang="en", target_lang="pl")
+        result = reward_model.single_score(SOURCE_TEXT, TRANSLATED_TEXTS, "pl")
     else:
         result = reward_model.score(SOURCE_TEXT, TRANSLATED_TEXTS)
 
@@ -17,7 +17,7 @@ def run_test_score(reward_model: Union[RewardModel, Validator], is_validator: bo
     translated_text_reverse = TRANSLATED_TEXTS.copy()
     translated_text_reverse.reverse()
     if is_validator:
-        result_reversed = reward_model.single_score(SOURCE_TEXT, translated_text_reverse,  source_lang="en", target_lang="pl")
+        result_reversed = reward_model.single_score(SOURCE_TEXT, translated_text_reverse, "pl")
     else:
         result_reversed = reward_model.score(SOURCE_TEXT, translated_text_reverse)
 

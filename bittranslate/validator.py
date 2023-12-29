@@ -12,6 +12,7 @@ from bittranslate.prompt_dataset.exams import Exams
 from bittranslate.prompt_dataset.peer_sum import PeerSum
 from bittranslate.prompt_dataset.prompt_dataset import PromptDataset
 from bittranslate.prompt_dataset.xquad import XQuAD
+from bittranslate.prompt_dataset.mkqa import MKqa
 from bittranslate.tracker import ValidatorTracker
 from bittranslate.constants import TRACKER_HISTORY_COUNT
 
@@ -22,14 +23,21 @@ class Validator:
         self._reward_weights = [0.5, 0.5]
         self._mgpt_pipeline = pipeline("text-generation", "ai-forever/mGPT", device=device)
 
-        self._langs = ["ar", "bg", "de", "el", "en",
+        self._langs =  ["ar", "bg", "de", "el", "en",
                        "es", "hi", "hu", "it", "pl", "pt",
-                       "ro", "ru", "th",  "tr", "vi"]
+                       "ro", "ru", "th",  "tr", "vi", "fr"]
+
+
         self._prior_langs = ["de", "en", "es", "it", "pl"]
 
         self._lang_pairs = list(permutations(self._langs, 2))
 
         self._prior_lang_pairs = list(permutations(self._prior_langs, 2))
+
+        self._lang_probs = {
+            "en": 0.4,
+            "pl": 0.1
+        }
 
         self.tracker = ValidatorTracker(self._lang_pairs, TRACKER_HISTORY_COUNT)
 
@@ -41,24 +49,26 @@ class Validator:
         german_quad = GermanQuAD()
         peer_sum = PeerSum()
         xquad = XQuAD()
+        mkqa = MKqa()
 
-        self._datasets = {"ar": [xquad],
-                          "bg": [exams],
-                          "de": [german_quad, xquad],
-                          "el": [xquad],
-                          "en": [peer_sum, xquad],
-                          "es": [xquad],
-                          "hi": [xquad],
-                          "hu": [exams],
-                          "it": [exams],
-                          "pl": [exams],
-                          "pt": [exams],
-                          "ro": [xquad],
-                          "ru": [xquad],
-                          "th": [xquad],
-                          "tr": [exams, xquad],
-                          "vi": [xquad]
-                          }
+        self._datasets = {
+                "ar": [xquad],
+                "bg": [exams],
+                "de": [german_quad, xquad],
+                "el": [xquad],
+                "en": [peer_sum, xquad],
+                "es": [xquad],
+                "fr": [mkqa],
+                "hi": [xquad],
+                "hu": [exams],
+                "it": [exams],
+                "pl": [exams],
+                "pt": [exams],
+                "ro": [xquad],
+                "ru": [xquad],
+                "th": [xquad],
+                "tr": [exams, xquad],
+                "vi": [exams, xquad]}
 
     def score(self, sources: List[str], translations: List[List[str]], source_lang: str, target_lang: str):
         len_sources = len(sources)
@@ -221,17 +231,15 @@ class Validator:
         self.tracker.texts_to_json(out_texts_path)
 
     def _select_lang_pair(self):
-        new_lang_pairs = [lang for lang in self._lang_pairs if lang not in self._prior_lang_pairs]
-
-        random_0_1 = random.random()
-        if random_0_1 < 0.95:
-            # Use prior language pairs 95% of the time
-            lang_pairs = self._prior_lang_pairs
-        else:
-            lang_pairs = new_lang_pairs
-
-        random_lang_pair_index = random.randint(0, len(lang_pairs) - 1)
-        random_lang_pair = lang_pairs[random_lang_pair_index]
-        source_lang = random_lang_pair[0]
-        target_lang = random_lang_pair[1]
+        remaining_prob = 1 - sum(self._lang_probs.get(lang, 0) for lang in self._langs)
+        langs_wo_prob = [lang for lang in self._langs if lang not in self._lang_probs]
+        prob_per_lang = remaining_prob / len(langs_wo_prob)
+        probs = {**{lang: prob_per_lang for lang in langs_wo_prob}, **self._lang_probs}
+        
+        source_lang = np.random.choice(
+            self._langs, p=[probs.get(lang) for lang in self._langs]
+        ).item()
+        target_lang = np.random.choice(
+            [lang for lang in self._langs if lang != source_lang]
+        ).item()
         return source_lang, target_lang

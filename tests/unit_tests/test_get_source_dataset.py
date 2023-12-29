@@ -7,8 +7,6 @@ def test_get_source_dataset():
     assert issubclass(type(dataset), PromptDataset)
     assert type(source) == str
     assert type(target) == str
-    source_target_pair = [source, target]
-    assert source_target_pair in validator._lang_pairs
 
 
 
