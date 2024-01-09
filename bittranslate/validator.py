@@ -1,3 +1,4 @@
+import re
 import sys
 import os
 import random
@@ -16,6 +17,9 @@ from bittranslate.prompt_dataset.mkqa import MKqa
 from bittranslate.tracker import ValidatorTracker
 from bittranslate.constants import TRACKER_HISTORY_COUNT
 
+
+
+
 class Validator:
     def __init__(self, device: str = "cpu", out_dir: str= "bittranslate_out/" ):
         self._reward_models = [BertScore(device=device), VectorSim(device=device)]
@@ -23,10 +27,15 @@ class Validator:
         self._reward_weights = [0.5, 0.5]
         self._mgpt_pipeline = pipeline("text-generation", "ai-forever/mGPT", device=device)
 
-        self._langs =  ["ar", "bg", "de", "el", "en",
-                       "es", "hi", "hu", "it", "pl", "pt",
-                       "ro", "ru", "th",  "tr", "vi", "fr"]
+        self._wenzhong_gpt2_pipeline = pipeline("text-generation", "IDEA-CCNL/Wenzhong-GPT2-110M", device=device)
 
+        self._langs =  ["ar", "bg", "de", "el", "en",
+                        "es", "hi", "hu", "it", "pl", "pt",
+                        "ro", "ru", "th",  "tr", "vi", "fr",
+                        "zh"]
+
+        self._wenzhong_gpt2_langs = ["zh"]
+        self._mgpt_langs = [lang for lang in self._langs if lang not in self._wenzhong_gpt2_langs]
 
         self._prior_langs = ["de", "en", "es", "it", "pl"]
 
@@ -68,7 +77,8 @@ class Validator:
                 "ru": [xquad],
                 "th": [xquad],
                 "tr": [exams, xquad],
-                "vi": [exams, xquad]}
+                "vi": [exams, xquad],
+                "zh": [xquad]}
 
     def score(self, sources: List[str], translations: List[List[str]], source_lang: str, target_lang: str):
         len_sources = len(sources)
@@ -181,30 +191,52 @@ class Validator:
 
 
     def generate_cases(self, count: int=2) -> (str, str, List[str]):
-        sources = []
+        good_sources = []
+        bad_sources = []
+        max_iter = count + 4
+        curr_iter = 0
 
         source_dataset, source_lang, target_lang = self._get_source_dataset()
 
-        for i in range(0, count):
+        while len(good_sources) < count and curr_iter < max_iter:
+            curr_iter += 1
             starting_case = source_dataset.sample_case(source_lang)
-            prompt = self._generate_prompt(starting_case)
-            sources.append(prompt)
+            prompt = self._generate_prompt(starting_case, lang=target_lang)
+            if self._is_gibberish(prompt, source_lang):
+                bad_sources.append(prompt)
+            else:
+                good_sources.append(prompt)
+        sources = good_sources if len(good_sources) > count else [*good_sources, *bad_sources][:count]
         return source_lang, target_lang, sources
 
-    def _generate_prompt(self, text: str) -> str:
-        current_token_length = len(self._mgpt_pipeline.tokenizer.encode(text))
-        return self._mgpt_pipeline(
-            text,
-            return_full_text=False,
-            no_repeat_ngram_size=3,
-            do_sample=True,
-            top_k=10,
-            temperature=1,
-            min_length=32 + current_token_length,
-            max_length=64 + current_token_length,
-        )[0]["generated_text"]
+    def _generate_prompt(self, text: str, lang: str = "en") -> str:
 
-
+        if(lang in self._wenzhong_gpt2_langs):
+            current_token_length = len(self._wenzhong_gpt2_pipeline.tokenizer.encode(text))
+            return self._wenzhong_gpt2_pipeline(
+                text,
+                return_full_text=False,
+                no_repeat_ngram_size=3,
+                do_sample=True,
+                top_k=10,
+                temperature=1,
+                min_length=32 + current_token_length,
+                max_length=64 + current_token_length,
+            )[0]["generated_text"]
+        elif(lang in self._mgpt_langs):
+            current_token_length = len(self._mgpt_pipeline.tokenizer.encode(text))
+            return self._mgpt_pipeline(
+                text,
+                return_full_text=False,
+                no_repeat_ngram_size=3,
+                do_sample=True,
+                top_k=10,
+                temperature=1,
+                min_length=32 + current_token_length,
+                max_length=64 + current_token_length,
+            )[0]["generated_text"]
+        else:
+            print("error, language not supported")
     def _filter_lang(self, translations, target_lang):
         # Lang detection filter
         lang_filter = []
@@ -218,6 +250,8 @@ class Validator:
                 print(f"Language detection exception. Error {str(e)}. Translation: {translation}", file=sys.stderr)
                 continue
             if pred == target_lang:
+                lang_filter.append(1)
+            elif pred[0:2] == "zh" and target_lang == "zh":
                 lang_filter.append(1)
             else:
                 lang_filter.append(0)
@@ -243,3 +277,31 @@ class Validator:
             [lang for lang in self._langs if lang != source_lang]
         ).item()
         return source_lang, target_lang
+    
+    def _is_gibberish(self, text: str, lang: str) -> bool:
+        """
+        Filter out gibberish text based on a list of patterns and a cutoff.
+
+        Args:
+            text (str): text(prompt) to be filtered
+            patterns (List[str]): list of regex patterns to be searched for
+            cutoff (float): cutoff for the sum of ratios of pattern matches to text length
+        """
+        cutoff = 0.2
+
+        chinese_pattern = r'[\u4e00-\u9fff]+'
+        emoji_pattern = r'[\U0001F600-\U0001F64F\U00002700-\U000027BF\U0001F680-\U0001F6FF\U00002600-\U000026FF\U0001F900-\U0001F9FF]'
+        invalid_pattern = r'[\uE000-\uF8FF]'
+        patterns = [emoji_pattern, invalid_pattern]
+        if lang != "zh":
+            patterns.append(chinese_pattern)
+        
+        pattern_results = []
+        for pattern in patterns:
+            chars = "".join(re.findall(pattern, text))
+            ratio = round(len(chars)/len(text), 2)
+            pattern_results.append(ratio)
+        
+        if sum(pattern_results) > cutoff:
+            return True
+        return False

@@ -27,6 +27,7 @@ def test_exams():
     for expect_lang in valid_langs:
         result = exams.sample_case(expect_lang)
         assert type(result) == str
+        print(expect_lang,result)
         got_lang = detect(result)
         assert expect_lang == got_lang
 
@@ -35,13 +36,17 @@ def test_exams():
 
 def test_xquad():
     xquad = XQuAD()
-    valid_langs = ['ar', 'de', 'el', 'en', 'es', 'hi', 'ro', 'ru', 'th', 'tr', 'vi']
+    valid_langs = ['ar', 'de', 'el', 'en', 'es', 'hi', 'ro', 'ru', 'th', 'tr', 'vi', 'zh']
 
     for expect_lang in valid_langs:
         result = xquad.sample_case(expect_lang)
         assert type(result) == str
+        print(expect_lang, result)
         got_lang = detect(result)
-        assert expect_lang == got_lang
+        if expect_lang == "zh":
+            assert got_lang[:2] == "zh"
+        else:
+            assert expect_lang == got_lang
     with pytest.raises(ValueError):
         result = xquad.sample_case("pl")
 
@@ -49,6 +54,7 @@ def test_mkqa():
     mkqa = MKqa()
     result = mkqa.sample_case("fr")
     assert type(result) == str
+    print(result)
     lang = detect(result)
     assert lang == "fr"
 

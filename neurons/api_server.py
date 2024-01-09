@@ -15,6 +15,7 @@ import uvicorn
 
 from neurons.protocol import Translate
 from bittranslate import is_api_data_valid
+from langdetect import detect
 
 ForwardFn = Callable[[Translate], Awaitable[Translate]]
 
@@ -146,7 +147,39 @@ class ApiServer:
         self.tunnel = None
 
     async def translate(self, request: Translate):
-        request_lang_pair = (request.source_lang, request.target_lang)
+
+        if (request.source_lang, request.target_lang) in self.lang_pairs:
+            source_lang = request.source_lang
+            bt.logging.trace(
+                f"Detected in lang_pairs "
+            )
+        elif request.source_lang == "auto":
+            source_lang, warning = self._detect_lang(request.source_texts, request.target_lang)
+            if not warning:
+                bt.logging.trace(
+                    f"Source lang: classified as {source_lang}"
+                )
+            else:
+                bt.logging.trace(
+                    f"Source lang: {warning}.  Classified as {source_lang}"
+                )
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": "Invalid source_lang. Please provide a language code or set it to /'auto'",
+                    "translated_texts": []
+                })
+
+        # Recreate the synapse with the source_lang.
+        request = Translate(
+            source_lang=source_lang,
+            target_lang=request.target_lang,
+            source_texts=request.source_texts,
+            translated_texts=[],
+        )
+
+        request_lang_pair = (source_lang, request.target_lang)
 
         if request_lang_pair not in self.lang_pairs:
             return JSONResponse(
@@ -218,6 +251,21 @@ class ApiServer:
                 public_url=self.tunnel.public_url
             )
             self.tunnel = None
+
+    def _detect_lang(self, source_texts, target_lang):
+        # todo account for all texts within the input rather than just the first
+        detect_source = detect(source_texts[0])
+        warning =  ""
+        if detect_source[:2] == 'zh':
+            lang = 'zh'
+        elif (detect_source, target_lang) in self.lang_pairs:
+            lang = detect_source
+        else:
+            # todo: return a warning to the client that we were unable to classify the source text
+            lang = 'en'
+            warning = "Could not detect the language for the source text"
+
+        return lang, warning
 
 
 

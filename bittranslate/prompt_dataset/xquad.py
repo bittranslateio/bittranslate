@@ -5,7 +5,7 @@ from .prompt_dataset import PromptDataset
 import random
 
 LANGUAGES = [ 
-    'ar', 'de', 'el', 'en', 'es', 'hi', 'ro', 'ru', 'th', 'tr', 'vi' 
+    'ar', 'de', 'el', 'en', 'es', 'hi', 'ro', 'ru', 'th', 'tr', 'vi', 'zh'
 ]
 
 class XQuAD(PromptDataset):

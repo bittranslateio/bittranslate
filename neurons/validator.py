@@ -419,7 +419,8 @@ def main( config ):
                         target_lang=target_lang
                     ),
                     # All responses have the deserialize function called on them before returning.
-                    deserialize = True,
+                    deserialize=True,
+                    timeout=10.0
                 )
                 bt.logging.debug(f"len(responses): {len(responses)}")
                 try:

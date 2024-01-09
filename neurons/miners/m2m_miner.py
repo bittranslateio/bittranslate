@@ -4,8 +4,7 @@ from neurons.miners.baseminer.log_snippet import log_snippet_of_texts
 from neurons.protocol import Translate
 from transformers import (
     M2M100ForConditionalGeneration,
-    M2M100Tokenizer
-)
+    M2M100Tokenizer)
 import argparse
 import bittensor as bt
 from bittranslate.logging import log_elapsed_time
@@ -21,7 +20,6 @@ class M2MMiner(BaseMiner):
             default="facebook/m2m100_1.2B",
             help="The Hugging Face ID or path to a model and tokenizer.",
         )
-
         parser.add_argument(
             "--device",
             type=str,
@@ -65,15 +63,47 @@ class M2MMiner(BaseMiner):
             type=int,
             default=100,
             help="Number of steps before tracked texts are saved.")
-
         parser.add_argument(
             "--disable_set_weight",
             action="store_true",
             help="If true, weights will not be updated. "
                  "Can be used to run a miner in addition to a validator from the same key.")
 
+        parser.add_argument(
+            "--do_sample",
+            action="store_true",
+            help="If true, sampling is used.")
+
+        parser.add_argument(
+            "--temperature",
+            type=float,
+            default=1.0,
+            help="How likely low-probability tokens are to be selected.",
+        )
+
+        parser.add_argument(
+            "--top_k",
+            type=int,
+            default=50,
+            help="Number of highest probability words to consider for each generation (when do_sample is True).",
+        )
+
+        parser.add_argument(
+            "--num_beams",
+            type=int,
+            default=1,
+            help="Number of beams for the search space.",
+        )
+        parser.add_argument(
+            "--no_repeat_ngram_size",
+            type=int,
+            default=0,
+            help="Prevents n-grams of the given value from repeating",
+        )
+
     def __init__(self):
         super().__init__()
+
         bt.logging.info(f"Loading model {repr(self.config.model_name)}")
         self.model = M2M100ForConditionalGeneration.from_pretrained(
             self.config.model_name
@@ -86,7 +116,7 @@ class M2MMiner(BaseMiner):
 
         self._langs = ["ar", "bg", "de", "el", "en",
                        "es", "hi", "hu", "it", "pl", "pt",
-                       "ro", "ru", "th",  "tr", "vi", "fr"]
+                       "ro", "ru", "th",  "tr", "vi", "fr", "zh"]
 
         self._lang_pairs = list(permutations(self._langs, 2))
 
@@ -95,6 +125,7 @@ class M2MMiner(BaseMiner):
         self.step = 0
 
     def forward(self, synapse: Translate) -> Translate:
+
         bt.logging.info(f"\n\nStep: {self.step}")
         # Verify the synapse has under max_batch_size source texts
         # that are all under max_char length.
@@ -121,9 +152,17 @@ class M2MMiner(BaseMiner):
                 max_length=self.config.max_length,
             ).to(self.model.device)
 
+
         with log_elapsed_time("model_generate"):
+            # Check if passed arguments exist in config and use them
+
             generated_tokens = self.model.generate(
                 **source_tok,
+                do_sample=self.config.do_sample,
+                temperature=self.config.temperature,
+                top_k=self.config.top_k,
+                no_repeat_ngram_size=self.config.no_repeat_ngram_size,
+                num_beams=self.config.num_beams,
                 # To indicate to the language model
                 # that we want to translate to a particular language,
                 # we set the Beginning-Of-Stream (BOS) token.

@@ -24,7 +24,7 @@ This is the list of currently supported languages:
 - Portuguese: **"pt"**
 - Bulgarian: **"bg"**
 - French: **"fr"**
-
+- Chinese: **"zh"**
 We have plans to soon support many other languages.
 ![BitTranslate Logo](https://github.com/bittranslateio/bittranslate/blob/main/bittranslate_logo_white.png)
 ## Installation
@@ -56,7 +56,7 @@ Paper: [EXAMS: A Multi-subject High School Examinations Dataset for Cross-lingua
 
 Hugging Face: [exams](https://huggingface.co/datasets/exams)
 
-Used for: Bulgarian, Hungarian, Italian, Polish, Portuguese, Turkish, Vietnamese
+Used for: Bulgarian, Chinese, Hungarian, Italian, Polish, Portuguese, Turkish, Vietnamese
 
 #### GermanQuAD
 Paper: [GermanQuAD and GermanDPR: Improving Non-English Question Answering and Passage Retrieval](https://aclanthology.org/2021.mrqa-1.4.pdf)
@@ -77,7 +77,7 @@ Paper: [On the cross-lingual transferability of monolingual representations](htt
 
 Hugging Face: [xquad](https://huggingface.co/datasets/xquad)
 
-Used for: Arabic, English, German, Greek, Spanish, Hindi, Romanian, Russian, Thai, Turkish, Vietnamese
+Used for: Arabic, English, Chinese,  German, Greek, Spanish, Hindi, Romanian, Russian, Thai, Turkish, Vietnamese
 
 #### MKQA
 Paper: [MKQA: A Linguistically Diverse Benchmark for Multilingual Open Domain Question Answering](https://arxiv.org/pdf/2007.15207.pdf)
@@ -94,6 +94,14 @@ Paper: [mGPT: Few-Shot Learners Go Multilingual](https://arxiv.org/pdf/2204.0758
 Hugging Face: [ai-forever/mGPT](https://huggingface.co/ai-forever/mGPT)
 
 Purpose: Validators use this model to generate original text that's sent to miners. 
+
+### Wenzhong-GPT2-110M
+
+Paper:[Fengshenbang 1.0: Being the Foundation of Chinese Cognitive Intelligence](https://arxiv.org/pdf/2209.02970.pdf)
+
+Hugging Face: [IDEA-CCNL/Wenzhong-GPT2-110M](https://huggingface.co/IDEA-CCNL/Wenzhong-GPT2-110M)
+
+Purpose: The same purpose as mGPT, but except exclusively used to produce Chinese text. 
 
 #### M2M
 
@@ -125,15 +133,15 @@ Now you are ready to start mining!
 python3 neurons/miners/m2m_miner.py --netuid 2  --axon.port  70000 --logging.debug
 ```
 
- Parameters
+Parameters 
 
 | Parameter                                 | Default                | Description                                                                                                    |
 |-------------------------------------------|------------------------|----------------------------------------------------------------------------------------------------------------|
-| device                                    | "cuda"                 | What device to use for the model                                                                               | 
-| max_batch_size                            | 2                      | The maximum allowed batch size (number of source texts) for an incoming request                                |
+| device                                    | "cuda"                 | The device to use for the model.                                                                               |
+| max_batch_size                            | 2                      | The maximum allowed batch size (number of source texts) for an incoming request.                               |
 | max_char                                  | 1024                   | Maximum allowed characters for source text.                                                                    |
-| max_length                                | 1024                   | The token length that source text will be truncated to                                                         |
-| model_name                                | "facebook/m2m100_1.2B" | Either a Hugging Face ID or a path to a local path that contains both the model and tokenizer                  |
+| max_length                                | 1024                   | The token length that source text will be truncated to.                                                        |
+| model_name                                | "facebook/m2m100_1.2B" | Either a Hugging Face ID or a path to a local path that contains both the model and tokenizer.                 |
 | tracking_file                             | "bittranslate.json"    | File to output source texts and translated texts to, in JSON format                                            |
 | miner.blacklist.whitelist                 | []                     | Whitelisted keys                                                                                               |
 | miner.blacklist.blacklist                 | []                     | Blacklisted keys                                                                                               |
@@ -142,6 +150,11 @@ python3 neurons/miners/m2m_miner.py --netuid 2  --axon.port  70000 --logging.deb
 | miner.blacklist.minimum_stake_requirement | 1024                   | Minimum stake required for a hotkey to avoid being blacklisted                                                 |
 | miner.blacklist.max_requests_per_min      | 4                      | The maximum allowed requests a validator can send to a miner per minute before getting blacklisted.            |
 | disable_set_weight                        | False                  | If true, weights will not be updated. Can be used to run a miner in addition to a validator from the same key. |
+| do_sample                                 | False                  | If true, sampling is used.                                                                                     |
+| top_k                                     | 50                     | Number of highest probability words to consider for each generation (when do_sample is True).                  |
+| temperature                               | 1.0                    | How likely low-probability tokens are to be selected (if do_sample is True).                                   |
+| num_beams                                 | 1                      | Number of beams for beam search. Default is  1`, meaning no beam search.                                       |
+| no_repeat_ngram_size                      | 0                      | Prevents n-grams of the given value from repeating                                                             |
 
 ## Validating  
 ```bash
@@ -175,13 +188,15 @@ response = requests.post(
         headers={"auth": "change-me"}, # place the API key where "change-me" is. 
         json={
             "source_texts": ["hello world"], # you may provide a list of texts. Do not exceed 512 characters per source text or include more than 2 source texts. 
-            "source_lang": "en", # Language code for the source text. 
+            "source_lang": "auto", # Language code for the source text, or auto for it to be classified automatically.  
             "target_lang":  "es" # Language code for the translated text. 
         }
     )
 print(response.json()) 
 # {'detail': 'success', 'translated_texts': ['Hola Mundo']}
 ```
+
+You may provide 
 
 ### Config
 
