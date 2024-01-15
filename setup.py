@@ -47,9 +47,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
+with open(path.join(here, 'VERSION'), encoding='utf-8') as f:
+    __version__ = f.read().strip()
+
 setup(
     name='bittranslate',
-    version="1.0.2",
+    version=__version__,
     description='A subnet for machine translation',
     long_description=long_description,
     long_description_content_type='text/markdown',

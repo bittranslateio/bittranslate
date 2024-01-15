@@ -84,7 +84,7 @@ class M2MMiner(BaseMiner):
         parser.add_argument(
             "--top_k",
             type=int,
-            default=50,
+            default=10,
             help="Number of highest probability words to consider for each generation (when do_sample is True).",
         )
 

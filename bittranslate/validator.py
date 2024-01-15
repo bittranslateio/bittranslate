@@ -211,7 +211,7 @@ class Validator:
 
     def _generate_prompt(self, text: str, lang: str = "en") -> str:
 
-        if(lang in self._wenzhong_gpt2_langs):
+        if lang in self._wenzhong_gpt2_langs:
             current_token_length = len(self._wenzhong_gpt2_pipeline.tokenizer.encode(text))
             return self._wenzhong_gpt2_pipeline(
                 text,
@@ -223,7 +223,7 @@ class Validator:
                 min_length=32 + current_token_length,
                 max_length=64 + current_token_length,
             )[0]["generated_text"]
-        elif(lang in self._mgpt_langs):
+        elif lang in self._mgpt_langs:
             current_token_length = len(self._mgpt_pipeline.tokenizer.encode(text))
             return self._mgpt_pipeline(
                 text,

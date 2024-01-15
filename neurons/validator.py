@@ -22,6 +22,7 @@ import os
 import torch
 import argparse
 import traceback
+import pkg_resources
 import bittensor as bt
 import random
 from typing import List, Optional
@@ -31,10 +32,9 @@ import anyio.to_thread
 from dataclasses import dataclass
 import threading
 from queue import SimpleQueue, Empty
-
 from bittranslate import Validator
 from bittranslate.logging import log_elapsed_time
-import bittranslate.constants as constants
+from neurons.auto_update import check_for_updates
 from neurons.protocol import Translate
 from neurons.api_server import ApiServer
 
@@ -117,6 +117,22 @@ def get_config():
         "--ngrok_domain",
         help=(
             "If set, expose the API over 'ngrok' to the specified domain."
+        )
+    )
+
+    parser.add_argument(
+        "--update_steps",
+        type=int,
+        default=500,
+        help=(
+            "The number of steps until we check if there has been a new version. If 0, no searching will be performed."
+        )
+    )
+
+    parser.add_argument(
+        "--no_restart",
+        help=(
+            "If set, the process is not restarted when a new version is detected."
         )
     )
 
@@ -321,7 +337,11 @@ def main( config ):
     alpha = 0.995
 
     ## Custom Initialization
+    bt.logging.info(f"Loading validator components...")
+
     validator = Validator(device=config.device, out_dir=config.out_dir)
+
+    bt.logging.info(f"Done validator components.")
 
     if config.enable_api:
         # external requests
@@ -482,6 +502,10 @@ def main( config ):
                                                               translated_texts=top_translations)
                 synapse_with_event.event.set()
 
+            if config.update_steps != 0:
+                if (step + 1) % config.update_steps == 0:
+                    check_for_updates(no_restart=config.no_restart)
+
             if (step + 1) % 100 == 0:
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
                 # We set these normalized scores back, 
@@ -569,5 +593,10 @@ def check_uid_availability(
 if __name__ == "__main__":
     # Parse the configuration.
     config = get_config()
+    version = pkg_resources.get_distribution('bittranslate').version
+    bt.logging.info(f"BitTranslate Version: {version}")
+    if config.update_steps != 0:
+        check_for_updates(no_restart=config.no_restart)
+
     # Run the main function.
     main( config )

@@ -78,7 +78,7 @@ Paper: [On the cross-lingual transferability of monolingual representations](htt
 
 Hugging Face: [xquad](https://huggingface.co/datasets/xquad)
 
-Used for: Arabic, English, Chinese,  German, Greek, Spanish, Hindi, Romanian, Russian, Thai, Turkish, Vietnamese
+Used for: Arabic, Chinese, English, German, Greek, Spanish, Hindi, Romanian, Russian, Thai, Turkish, Vietnamese
 
 #### MKQA
 Paper: [MKQA: A Linguistically Diverse Benchmark for Multilingual Open Domain Question Answering](https://arxiv.org/pdf/2007.15207.pdf)
@@ -88,7 +88,7 @@ Hugging Face: [mkqa](https://huggingface.co/datasets/mkqa)
 Used for: French
 
 ### Models
-#### MGPT
+#### mGPT
 
 Paper: [mGPT: Few-Shot Learners Go Multilingual](https://arxiv.org/pdf/2204.07580.pdf)
 
@@ -152,7 +152,7 @@ Parameters
 | miner.blacklist.max_requests_per_min      | 4                      | The maximum allowed requests a validator can send to a miner per minute before getting blacklisted.            |
 | disable_set_weight                        | False                  | If true, weights will not be updated. Can be used to run a miner in addition to a validator from the same key. |
 | do_sample                                 | False                  | If true, sampling is used.                                                                                     |
-| top_k                                     | 50                     | Number of highest probability words to consider for each generation (when do_sample is True).                  |
+| top_k                                     | 10                     | Number of highest probability words to consider for each generation (when do_sample is True).                  |
 | temperature                               | 1.0                    | How likely low-probability tokens are to be selected (if do_sample is True).                                   |
 | num_beams                                 | 1                      | Number of beams for beam search. Default is  1`, meaning no beam search.                                       |
 | no_repeat_ngram_size                      | 0                      | Prevents n-grams of the given value from repeating                                                             |
@@ -163,19 +163,21 @@ python3 neurons/validator.py --netuid 2  --axon.port  70000 --logging.debug
 ```
  Parameters: 
 
-| Parameter          | Default             | Description                                                                                                                                                                           |
-|--------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| device             | "cuda"              | "cuda" if detected else "cpu"                                                                                                                                                         |
-| max_char           | 1024                | Maximum allowed characters for translated text.                                                                                                                                       |
-| batch_size         | 2                   | The number of source texts that are sent to the miners every request. Miners by default ignore request with more than 2 source texts, so we do not recommend increasing this value    |
-| miners_per_step    | 8                   | The number of miners to query in each step                                                                                                                                            |
-| track_steps        | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                            |
-| out_dir            | "bittranslate_out/" | Output directory for tracked results.                                                                                                                                                 |
-| enable_api         | False               | If set, a callable API will be activated.                                                                                                                                             |
-| score_api          | False               | If set,  responses from API requests will be used to modify scores.                                                                                                                   |
-| api_json           | "neurons/api.json"  | A path to a a config file for the API.                                                                                                                                                |
-| no_artificial_eval | False               | If set, artificial data will not be sent to miners for the purpose of scoring. We only recommend setting this to true to when debugging the API.                                      |
-| ngrok_domain       | None                | If set, expose the API over ngrok to the specified domain                                                                                                                             |
+| Parameter          | Default             | Description                                                                                                                                                                          |
+|--------------------|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| device             | "cuda"              | "cuda" if detected else "cpu"                                                                                                                                                        |
+| max_char           | 1024                | Maximum allowed characters for translated text.                                                                                                                                      |
+| batch_size         | 2                   | The number of source texts that are sent to the miners every request. Miners by default ignore request with more than 2 source texts, so we do not recommend increasing this value   |
+| miners_per_step    | 8                   | The number of miners to query in each step                                                                                                                                           |
+| track_steps        | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                           |
+| out_dir            | "bittranslate_out/" | Output directory for tracked results.                                                                                                                                                |
+| enable_api         | False               | If set, a callable API will be activated.                                                                                                                                            |
+| score_api          | False               | If set,  responses from API requests will be used to modify scores.                                                                                                                  |
+| api_json           | "neurons/api.json"  | A path to a a config file for the API.                                                                                                                                               |
+| no_artificial_eval | False               | If set, artificial data will not be sent to miners for the purpose of scoring. We only recommend setting this to true to when debugging the API.                                     |
+| ngrok_domain       | None                | If set, expose the API over ngrok to the specified domain                                                                                                                            |
+| update_steps       | 500                 | The number of steps until we check if there has been a new version. If 0, no searching will be performed.                                                                            |
+| no_restart         | False               | If set, the process is not restarted when a new version is detected.                                                                                                                 |
 
 ## Optional: Validator API
 Validators have the can enable a REST API to allow them to produce translates for arbitrary text.  
@@ -196,8 +198,6 @@ response = requests.post(
 print(response.json()) 
 # {'detail': 'success', 'translated_texts': ['Hola Mundo']}
 ```
-
-You may provide 
 
 ### Config
 
