@@ -11,7 +11,6 @@ LANGUAGES = [
 class XQuAD(PromptDataset):
 
     _datasets: Dict[str, Dataset]
-    """ Map of datasets by language. """
 
     def __init__(self):
         super().__init__()

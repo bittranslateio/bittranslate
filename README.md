@@ -6,28 +6,35 @@ The validator then evaluates the outputted translations using two Reward Models 
 The subnet has been designed to be able to accommodate numerous translation pairs. 
 
 This is the list of currently supported languages:
-
-- English: **"en"**
-- Spanish: **"es"**
-- German: **"de"**
-- Italian: **"it"**
 - Arabic: **"ar"**
-- Hindi: **"hi"**
-- Polish: **"pl"**
-- Russian: **"ru"**
-- Turkish: **"tr"**
-- Greek: **"el"**
-- Thai: **"th"**
-- Vietnamese: **"vi"**
-- Hungarian: **"hu"**
-- Romanian: **"ro"**
-- Portuguese: **"pt"**
 - Bulgarian: **"bg"**
-- French: **"fr"**
 - Chinese: **"zh"**
+- English: **"en"**
+- Estonian: **"et"**
+- Finnish: **"fi"**
+- French: **"fr"**
+- German: **"de"**
+- Greek: **"el"**
+- Hindi: **"hi"**
+- Hungarian: **"hu"**
+- Italian: **"it"**
+- Korean: **"ko"**
+- Persian: **"fa"**
+- Polish: **"pl"**
+- Portuguese: **"pt"**
+- Romanian: **"ro"**
+- Russian: **"ru"**
+- Spanish: **"es"**
+- Swedish: **"sv"**
+- Thai: **"th"**
+- Turkish: **"tr"**
+- Ukrainian: **"uk"**
+- Vietnamese: **"vi"**
+
 
 We have plans to soon support many other languages.
 ![BitTranslate Logo](https://github.com/bittranslateio/bittranslate/blob/main/bittranslate_logo_white.png)
+
 ## Installation
 ```bash
 git clone https://github.com/LucrosusCapital/bittranslate.git
@@ -51,6 +58,14 @@ Inspired by the STransQuest technique from [TransQuest: Translation Quality Esti
 
 ### Datasets 
 Validators use text from following datasets as a prompt for a text generation model that produces text which is then sent to miners. 
+
+#### BitTranslate Datasets
+We open-sourced datasets for 7 languages to expand the languages available on BitTranslate. 
+
+Hugging Face: [datasets](https://huggingface.co/BitTranslate)
+
+Used for: Estonian, Persian, Finnish, French, Korean, Swedish, Ukrainian
+
 
 #### Exams 
 Paper: [EXAMS: A Multi-subject High School Examinations Dataset for Cross-lingual and Multilingual Question Answering](https://aclanthology.org/2020.emnlp-main.438.pdf)
@@ -178,6 +193,7 @@ python3 neurons/validator.py --netuid 2  --axon.port  70000 --logging.debug
 | ngrok_domain       | None                | If set, expose the API over ngrok to the specified domain                                                                                                                            |
 | update_steps       | 500                 | The number of steps until we check if there has been a new version. If 0, no searching will be performed.                                                                            |
 | no_restart         | False               | If set, the process is not restarted when a new version is detected.                                                                                                                 |
+
 
 ## Optional: Validator API
 Validators have the can enable a REST API to allow them to produce translates for arbitrary text.  

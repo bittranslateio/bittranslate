@@ -1,4 +1,4 @@
-from bittranslate import Exams, XQuAD, PeerSum,  GermanQuAD, MKqa
+from bittranslate import Exams, XQuAD, PeerSum,  GermanQuAD, MKqa, BitTranslateDataset
 import pytest
 from langdetect import detect
 
@@ -60,3 +60,17 @@ def test_mkqa():
 
     with pytest.raises(ValueError):
         result = mkqa.sample_case("xx")
+
+def test_bittranslate():
+    bittranslate_dataset = BitTranslateDataset()
+    valid_langs = ["et", "fa", "fi", "fr", "ko", "sv", "uk"]
+
+    for expect_lang in valid_langs:
+        result = bittranslate_dataset.sample_case(expect_lang)
+        assert type(result) == str
+        print(expect_lang, result)
+        got_lang = detect(result)
+        assert expect_lang == got_lang
+
+    with pytest.raises(ValueError):
+        result = bittranslate_dataset.sample_case("en")

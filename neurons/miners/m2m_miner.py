@@ -114,9 +114,10 @@ class M2MMiner(BaseMiner):
 
         self.tokenizer = M2M100Tokenizer.from_pretrained(self.config.model_name)
 
-        self._langs = ["ar", "bg", "de", "el", "en",
-                       "es", "hi", "hu", "it", "pl", "pt",
-                       "ro", "ru", "th",  "tr", "vi", "fr", "zh"]
+        self._langs =  ["ar", "bg", "de", "el", "en", "et",
+                        "es", "fa", "fr", "fi", "hi", "hu", "it", "ka", "ko", "pl", "pt",
+                        "ro", "ru", "sv", "th", "tr", "uk", "vi",
+                        "zh"]
 
         self._lang_pairs = list(permutations(self._langs, 2))
 

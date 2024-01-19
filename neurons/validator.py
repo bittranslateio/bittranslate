@@ -136,6 +136,7 @@ def get_config():
         )
     )
 
+
     # Adds subtensor specific arguments i.e. --subtensor.chain_endpoint ... --subtensor.network ...
     bt.subtensor.add_args(parser)
     # Adds logging specific arguments i.e. --logging.debug ..., --logging.trace .. or --logging.logging_dir ...
@@ -334,7 +335,7 @@ def main( config ):
     scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
     bt.logging.info(f"Weights: {scores}")
 
-    alpha = 0.995
+    alpha = 0.999
 
     ## Custom Initialization
     bt.logging.info(f"Loading validator components...")

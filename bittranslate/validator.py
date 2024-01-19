@@ -14,6 +14,7 @@ from bittranslate.prompt_dataset.peer_sum import PeerSum
 from bittranslate.prompt_dataset.prompt_dataset import PromptDataset
 from bittranslate.prompt_dataset.xquad import XQuAD
 from bittranslate.prompt_dataset.mkqa import MKqa
+from bittranslate.prompt_dataset.bittranslate_dataset import BitTranslateDataset
 from bittranslate.tracker import ValidatorTracker
 from bittranslate.constants import TRACKER_HISTORY_COUNT
 
@@ -30,18 +31,14 @@ class Validator:
         self._wenzhong_gpt2_pipeline = pipeline("text-generation", "IDEA-CCNL/Wenzhong-GPT2-110M", device=device)
 
         self._langs =  ["ar", "bg", "de", "el", "en",
-                        "es", "hi", "hu", "it", "pl", "pt",
-                        "ro", "ru", "th",  "tr", "vi", "fr",
+                        "es", "et", "fa", "fi", "fr", "hi", "hu", "it", "ko", "pl", "pt",
+                        "ro", "ru", "sv", "th",  "tr", "uk", "vi",
                         "zh"]
 
         self._wenzhong_gpt2_langs = ["zh"]
         self._mgpt_langs = [lang for lang in self._langs if lang not in self._wenzhong_gpt2_langs]
 
-        self._prior_langs = ["de", "en", "es", "it", "pl"]
-
         self._lang_pairs = list(permutations(self._langs, 2))
-
-        self._prior_lang_pairs = list(permutations(self._prior_langs, 2))
 
         self._lang_probs = {
             "en": 0.4,
@@ -59,6 +56,7 @@ class Validator:
         peer_sum = PeerSum()
         xquad = XQuAD()
         mkqa = MKqa()
+        bittranslate_dataset = BitTranslateDataset()
 
         self._datasets = {
                 "ar": [xquad],
@@ -67,16 +65,22 @@ class Validator:
                 "el": [xquad],
                 "en": [peer_sum, xquad],
                 "es": [xquad],
-                "fr": [mkqa],
+                "et": [bittranslate_dataset],
+                "fa": [bittranslate_dataset],
+                "fi": [bittranslate_dataset],
+                "fr": [mkqa, bittranslate_dataset],
                 "hi": [xquad],
                 "hu": [exams],
                 "it": [exams],
+                "ko": [bittranslate_dataset],
                 "pl": [exams],
                 "pt": [exams],
                 "ro": [xquad],
                 "ru": [xquad],
+                "sv": [bittranslate_dataset],
                 "th": [xquad],
                 "tr": [exams, xquad],
+                "uk": [bittranslate_dataset],
                 "vi": [exams, xquad],
                 "zh": [xquad]}
 

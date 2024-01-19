@@ -21,7 +21,7 @@ import requests
 import bittensor as bt
 import sys
 
-PATH_TO_REPO = "https://raw.githubusercontent.com/bittranslateio/bittranslate-test/main/VERSION"
+PATH_TO_REPO = "https://raw.githubusercontent.com/bittranslateio/bittranslate/main/VERSION"
 
 def check_for_updates(no_restart):
     try:
