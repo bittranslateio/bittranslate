@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 from itertools import permutations
 from transformers import pipeline
-from langdetect import detect
+from bittranslate.normalization import sigmoid_normalize, softmax_normalize
 from bittranslate.reward_models import BertScore, VectorSim
 from bittranslate.prompt_dataset.german_quad import GermanQuAD
 from bittranslate.prompt_dataset.exams import Exams
@@ -16,9 +16,15 @@ from bittranslate.prompt_dataset.xquad import XQuAD
 from bittranslate.prompt_dataset.mkqa import MKqa
 from bittranslate.prompt_dataset.bittranslate_dataset import BitTranslateDataset
 from bittranslate.tracker import ValidatorTracker
-from bittranslate.constants import TRACKER_HISTORY_COUNT
-
-
+from bittranslate.constants import (TRACKER_HISTORY_COUNT,
+                                    SOFTMAX_T_SINGLE,
+                                    SOFTMAX_T_FINAL,
+                                    MAX_MGPT_PROMPT_LENGTH,
+                                    MAX_WENZONG_PROMPT_LENGTH,
+                                    MIN_PROMPT_LENGTH,
+                                    MAX_PROMPT_LENGTH)
+from bittranslate.detect_lang import DetectLang
+from bittranslate.util import trim_prompt
 
 
 class Validator:
@@ -45,11 +51,14 @@ class Validator:
             "pl": 0.1
         }
 
+
         self.tracker = ValidatorTracker(self._lang_pairs, TRACKER_HISTORY_COUNT)
 
         self.out_dir = out_dir
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
+
+        self._detect_lang = DetectLang(output_file=self.out_dir + "lang_detection.json")
 
         exams = Exams()
         german_quad = GermanQuAD()
@@ -103,7 +112,7 @@ class Validator:
             # t: a list of translation where index contains a translation from a given miner.
             # l: target language
 
-            scores = self.single_score(s, t, target_lang)
+            scores = self.single_score(s, t, source_lang, target_lang)
             all_scores = [a + b for a, b in zip(all_scores, scores)]
 
             max_score = max(scores)
@@ -125,6 +134,8 @@ class Validator:
                 overall_top_min_target = min_score_value
 
         final_scores = [score/len_sources for score in all_scores]
+        # Normalize with softmax and scale by number of miners / 2
+        final_scores = [score * 0.5 * miners_count for score in softmax_normalize(final_scores, t=SOFTMAX_T_FINAL)]
 
         # Track scores
         try: # nonessential code:
@@ -148,17 +159,20 @@ class Validator:
 
         return final_scores, top_translations, top_scores
 
-    def single_score(self, source: str, translations: List[str], target_lang: str) -> List[float]:
+    def single_score(self, source: str, translations: List[str], source_lang: str, target_lang: str) -> List[float]:
 
-        lang_filter = self._filter_lang(translations, target_lang)
+        lang_filter = self._filter_lang(translations, source_lang, target_lang)
 
         reward_scores = [0.0] * len(translations)
+
+        miners_count = len(translations)
+
         for i, reward_model in enumerate(self._reward_models):
             # Produce scores with a Reward Model
             scores = reward_model.score(source, translations)
 
-            # Sigmoid normalization
-            norm_scores = self._sigmoid_normalize(scores)
+            # softmax normalization
+            norm_scores = [score * 0.5 * miners_count for score in softmax_normalize(scores, t=SOFTMAX_T_SINGLE)]
 
             # Get the weight for the Reward Model
             weight = self._reward_weights[i]
@@ -172,15 +186,11 @@ class Validator:
                 for current_score, new_score in zip(reward_scores, weighted_scores)
             ]
 
+        # Multiply each score by the lang_filter
+        # This will zero out any scores that are not in the target language
         result = [a * b for a, b in zip(lang_filter, reward_scores)]
 
         return result
-
-    def _sigmoid_normalize(self, scores: List[float]) -> List[float]:
-        np_scores = np.array(scores)
-        norm_scores = 1 / (1 + np.exp(-np_scores))
-
-        return norm_scores.tolist()
 
     def _get_source_dataset(self) -> (PromptDataset, str, str):
 
@@ -216,46 +226,61 @@ class Validator:
     def _generate_prompt(self, text: str, lang: str = "en") -> str:
 
         if lang in self._wenzhong_gpt2_langs:
-            current_token_length = len(self._wenzhong_gpt2_pipeline.tokenizer.encode(text))
+            tokens = self._wenzhong_gpt2_pipeline.tokenizer.encode(text)
+
+            trim_tokens = trim_prompt(tokens, MAX_WENZONG_PROMPT_LENGTH-MAX_PROMPT_LENGTH)
+
+            current_token_length = len(trim_tokens)
+
+            trim_text = self._wenzhong_gpt2_pipeline.tokenizer.decode(trim_tokens)
+
             return self._wenzhong_gpt2_pipeline(
-                text,
+                trim_text,
                 return_full_text=False,
                 no_repeat_ngram_size=3,
                 do_sample=True,
                 top_k=10,
                 temperature=1,
-                min_length=32 + current_token_length,
-                max_length=64 + current_token_length,
+                min_length=MIN_PROMPT_LENGTH + current_token_length,
+                max_length=MAX_PROMPT_LENGTH + current_token_length,
             )[0]["generated_text"]
         elif lang in self._mgpt_langs:
-            current_token_length = len(self._mgpt_pipeline.tokenizer.encode(text))
+            tokens = self._mgpt_pipeline.tokenizer.encode(text)
+
+
+            trim_tokens = trim_prompt(tokens, MAX_MGPT_PROMPT_LENGTH-MAX_PROMPT_LENGTH)
+            current_token_length =  len(trim_tokens)
+
+            trim_text = self._mgpt_pipeline.tokenizer.decode(trim_tokens)
+
+
             return self._mgpt_pipeline(
-                text,
+                trim_text,
                 return_full_text=False,
                 no_repeat_ngram_size=3,
                 do_sample=True,
                 top_k=10,
                 temperature=1,
-                min_length=32 + current_token_length,
-                max_length=64 + current_token_length,
+                min_length=MIN_PROMPT_LENGTH + current_token_length,
+                max_length=MAX_PROMPT_LENGTH + current_token_length,
             )[0]["generated_text"]
         else:
             print("error, language not supported")
-    def _filter_lang(self, translations, target_lang):
+
+    def _filter_lang(self, translations, source_lang, target_lang):
         # Lang detection filter
         lang_filter = []
 
         for translation in translations:
             try:
-                pred = detect(translation)
+
+                lang_filter_success = self._detect_lang.detect(translation, source_lang, target_lang)
 
             except Exception as e:
                 lang_filter.append(0)
                 print(f"Language detection exception. Error {str(e)}. Translation: {translation}", file=sys.stderr)
                 continue
-            if pred == target_lang:
-                lang_filter.append(1)
-            elif pred[0:2] == "zh" and target_lang == "zh":
+            if lang_filter_success:
                 lang_filter.append(1)
             else:
                 lang_filter.append(0)

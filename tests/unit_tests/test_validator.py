@@ -11,20 +11,10 @@ def test_reward_weights():
     assert sum(validator._reward_weights) == 1
 
 
-def test_sigmoid_normalization():
-    scores = [-4, -2, -1, 0, 1, 2, 4]
-    result = validator._sigmoid_normalize(scores)
-    assert type(result) == list
-    assert all(isinstance(score, float) for score in result)
-    answers =  [0.01798620996209156, 0.11920292202211755, 0.2689414213699951, 0.5, 0.7310585786300049, 0.8807970779778823, 0.9820137900379085]
-    for pred, answer in zip(result, answers):
-        assert abs(pred - answer) < 0.001
-
 
 def test_validator():
     # tests the single_score method
     run_test_score(validator, True)
-
 
 
 def test_scores_en_pl():

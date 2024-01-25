@@ -1,5 +1,5 @@
 from .validator import validator
-
+from bittranslate.util import trim_prompt
 #this is based on self.lang in validator
 #langs_to_test = ["ar", "bg", "de", "el", "en", "es", "hi", "hu", "it", "pl", "pt","ro", "ru", "th",  "tr", "vi", "fr","zh"]
 langs_to_test = ['en','zh']
@@ -39,3 +39,11 @@ def test_generate_prompts():
             token_output = tokenizer.encode(prompt)
             token_len = len(token_output)
             assert 50 <= token_len <= 100
+
+def test_trim_prompt():
+    toks = ["t1", "t2", "t3"]
+    result =  trim_prompt(toks,2)
+    assert result == ["t2", "t3"]
+
+    result =  trim_prompt(toks,4)
+    assert result == ["t1", "t2", "t3"]

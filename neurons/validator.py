@@ -18,6 +18,7 @@
 
 # Bittensor Validator Template:
 
+import csv
 import os
 import torch
 import argparse
@@ -34,6 +35,7 @@ import threading
 from queue import SimpleQueue, Empty
 from bittranslate import Validator
 from bittranslate.logging import log_elapsed_time
+from bittranslate.save_scores import save_scores
 from neurons.auto_update import check_for_updates
 from neurons.protocol import Translate
 from neurons.api_server import ApiServer
@@ -130,6 +132,22 @@ def get_config():
     )
 
     parser.add_argument(
+        "--score_logging_steps",
+        type=int,
+        default=0,
+        help=(
+            "The number of steps until we log the scores by UID. If 0, no logging will be performed."
+        )
+    )
+
+    parser.add_argument(
+        "--score_logging_file",
+        type=str,
+        default="scores.csv",
+
+    )
+
+    parser.add_argument(
         "--no_restart",
         help=(
             "If set, the process is not restarted when a new version is detected."
@@ -174,15 +192,15 @@ def clamp(min: int, max: int, x: int) -> int:
     return x
 
 def translation_for_source_text_in_response(
-        response: Translate, 
+        response: Translate,
         source_text_index: int
 ) -> str:
-    """ Get the translated text corresponding 
+    """ Get the translated text corresponding
         to a particular source text on a miner's response. """
 
     if source_text_index >= len(response.translated_texts):
         return "BLANK"
-    
+
     response_text = response.translated_texts[source_text_index]
 
     if len(response_text) > config.max_char:
@@ -191,20 +209,20 @@ def translation_for_source_text_in_response(
     if type(response_text) != str:
         # TODO log
         return "BLANK"
-    
+
     return response_text
 
 def translations_for_source_text(
         responses: List[Translate],
         source_text_index: int
 ) -> List[str]:
-    """ Return a list of translations for a given source text, 
+    """ Return a list of translations for a given source text,
         from a set of responses.
         Each translation corresponds to a different miner. """
-    
+
     return [
         translation_for_source_text_in_response(
-            response=response, 
+            response=response,
             source_text_index=source_text_index
         )
         for response in responses
@@ -214,15 +232,15 @@ def build_translations_per_source_text(
         responses: List[Translate]
 ) -> List[List[str]]:
     """ Assemble a list of lists, where if viewed as a matrix,
-        each row corresponds to different miner's responses 
+        each row corresponds to different miner's responses
         to the same source text.
-        
-        Returns `translations`, 
-        where `translations[source_index][miner_index]=...` 
+
+        Returns `translations`,
+        where `translations[source_index][miner_index]=...`
     """
     return [
         translations_for_source_text(
-            responses=responses, 
+            responses=responses,
             source_text_index=source_text_index
         )
         # It is OK to trust this arbitrary response's "source_texts" field
@@ -237,7 +255,7 @@ def update_scores_from_metagraph(
         hotkeys: List[str]
 ) -> List[float]:
     """ Update the per-UID scores based on recent metagraph updates.
-    
+
         Inputs are current scores, recently synced metagraph,
         and list of hotkeys from before metagraph sync.
 
@@ -264,7 +282,7 @@ def update_scores_from_metagraph(
 
         # Update scores.
         scores = new_scores
-    
+
     return scores
 
 @dataclass
@@ -359,6 +377,10 @@ def main( config ):
 
     bt.logging.info("Starting validator loop.")
     step = 0
+
+    uid_score_history = {}
+    uid_score_steps =  []
+
     while True:
         try:
             bt.logging.info(f"\n\nStep: {step}")
@@ -491,7 +513,15 @@ def main( config ):
 
                 bt.logging.debug(f"after: {scores=}")
 
-                # Periodically update the weights on the Bittensor blockchain.
+                if config.score_logging_steps > 0:
+                    if (step + 1) % config.score_logging_steps == 0:
+                        save_scores(step=step,
+                                    scores=scores,
+                                    uid_score_history=uid_score_history,
+                                    uid_score_steps=uid_score_steps,
+                                    score_logging_file=config.score_logging_file,
+                                    metagraph=metagraph)
+
 
             # Save outputs to object shared with API server
             # and flag event such that API server
@@ -509,8 +539,8 @@ def main( config ):
 
             if (step + 1) % 100 == 0:
                 weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-                # We set these normalized scores back, 
-                # such that miner weights eventually decay 
+                # We set these normalized scores back,
+                # such that miner weights eventually decay
                 # if no rewards are achieved.
                 scores = weights
                 bt.logging.info(f"Setting weights: {weights}")
@@ -535,7 +565,7 @@ def main( config ):
                         wait_for_inclusion=False,
                     )
                 if result: bt.logging.success('Successfully set weights.')
-                else: bt.logging.error('Failed to set weights.') 
+                else: bt.logging.error('Failed to set weights.')
 
             # End the current step and prepare for the next iteration.
             step += 1
@@ -547,7 +577,7 @@ def main( config ):
                     bt.logging.trace(f"metagraph: {metagraph=}")
 
                 scores = update_scores_from_metagraph(
-                    scores=scores, 
+                    scores=scores,
                     metagraph=metagraph,
                     hotkeys=hotkeys
                 )
