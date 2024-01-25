@@ -40,4 +40,4 @@ We have plans to soon support many other languages.
 
 ## 🖥️ &nbsp;Web App: https://bittranslate.io
 
-Translate text amongst 18 languages with 153 language pairs on our website!
+Translate text amongst 24 languages with 256 language pairs on our website!
