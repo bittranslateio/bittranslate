@@ -33,7 +33,9 @@ python3 neurons/validator.py --netuid 2  --axon.port  70000 --logging.debug
 | no_artificial_eval | False               | If set, artificial data will not be sent to miners for the purpose of scoring. We only recommend setting this to true to when debugging the API.                                     |
 | ngrok_domain       | None                | If set, expose the API over ngrok to the specified domain                                                                                                                            |
 | update_steps       | 500                 | The number of steps until we check if there has been a new version. If 0, no searching will be performed.                                                                            |
-| no_restart         | False               | If set, the process is not restarted when a new version is detected.                                                                              
+| no_restart         | False               | If set, the process is not restarted when a new version is detected.  
+| score_logging_steps | 0                  | The number of steps until scores are logged. If 0, no logging will be performed. |         
+| score_logging_file  | "scores.csv"           | Scores will be logged to the specified file.     |                                                                             
 
 ## Optional: API
 Validators have the can enable a REST API to allow them to produce translates for arbitrary text.  
