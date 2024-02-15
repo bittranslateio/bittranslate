@@ -13,13 +13,16 @@ class DetectLang():
                 'count': 0,
                 "source": {},
                 "target": {},
-                "source-target": {}
+                "source-target": {},
+                "examples": []
             },
             "pass":{
                 'count': 0,
                 "source": {},
                 "target": {},
-                "source-target": {}}
+                "source-target": {},
+                "examples": []
+            }
         }
 
 
@@ -65,14 +68,14 @@ class DetectLang():
         else:
             success= True
 
-        self.__add_value(success, source_lang, target_lang)
+        self.__add_value(success, source_lang, target_lang, text)
         self.__save()
 
         return success
 
 
 
-    def __add_value(self, success: bool, source_lang: str, target_lang: str):
+    def __add_value(self, success: bool, source_lang: str, target_lang: str, text: str):
         self.history_lang_detect["count"]+=1
         sf_string = "pass" if success else "fail"
         self.history_lang_detect[sf_string]["source"][source_lang] = self.history_lang_detect[sf_string][
@@ -85,6 +88,14 @@ class DetectLang():
                                                                                                        0) + 1
         self.history_lang_detect[sf_string]["count"] += 1
 
+        case_dict = {
+            "source": source_lang,
+            "target": target_lang,
+            "text": text
+        }
+        self.history_lang_detect[sf_string]["examples"].append(case_dict)
+        if len(self.history_lang_detect[sf_string]["examples"]) >= 1000:
+            self.history_lang_detect[sf_string]["examples"].pop(0)
 
     def __save(self):
         try:

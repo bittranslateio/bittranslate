@@ -350,10 +350,10 @@ def main( config ):
     bt.logging.info("Building validation weights.")
 
 
-    scores = torch.zeros_like(metagraph.S, dtype=torch.float32)
+    scores =  torch.full_like(metagraph.S, fill_value=1/256,  dtype=torch.float32)
     bt.logging.info(f"Weights: {scores}")
 
-    alpha = 0.999
+    alpha = 0.98
 
     ## Custom Initialization
     bt.logging.info(f"Loading validator components...")
@@ -515,6 +515,18 @@ def main( config ):
 
                 if config.score_logging_steps > 0:
                     if (step + 1) % config.score_logging_steps == 0:
+
+                        if config.logging.trace:
+                            # Step
+                            bt.logging.trace(f"Details about scores.csv")
+                            bt.logging.trace(f"step: {step}")
+
+                            # uid_score_history
+                            first_10_history_items = list(uid_score_history.items())[:10]
+                            bt.logging.trace(f"First 10 'uid_score_history' values: ")
+                            for uid, score in first_10_history_items:
+                                bt.logging.trace(uid + str(score))
+
                         save_scores(step=step,
                                     scores=scores,
                                     uid_score_history=uid_score_history,
@@ -537,12 +549,11 @@ def main( config ):
                 if (step + 1) % config.update_steps == 0:
                     check_for_updates(no_restart=config.no_restart)
 
+            scores = torch.nn.functional.normalize(scores, p=1.0, dim=0)
+
             if (step + 1) % 100 == 0:
-                weights = torch.nn.functional.normalize(scores, p=1.0, dim=0)
-                # We set these normalized scores back,
-                # such that miner weights eventually decay
-                # if no rewards are achieved.
-                scores = weights
+
+                weights = scores
                 bt.logging.info(f"Setting weights: {weights}")
 
                 processed_weight_uids,  processed_weights, = bt.utils.weight_utils.process_weights_for_netuid(

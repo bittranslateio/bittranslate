@@ -6,6 +6,7 @@ from typing import List
 import numpy as np
 from itertools import permutations
 from transformers import pipeline
+from bittranslate.content_filter import contains_formula, contains_url, contains_author_list
 from bittranslate.normalization import sigmoid_normalize, softmax_normalize
 from bittranslate.reward_models import BertScore, VectorSim
 from bittranslate.prompt_dataset.german_quad import GermanQuAD
@@ -50,7 +51,6 @@ class Validator:
             "en": 0.4,
             "pl": 0.1
         }
-
 
         self.tracker = ValidatorTracker(self._lang_pairs, TRACKER_HISTORY_COUNT)
 
@@ -134,8 +134,7 @@ class Validator:
                 overall_top_min_target = min_score_value
 
         final_scores = [score/len_sources for score in all_scores]
-        # Normalize with softmax and scale by number of miners / 2
-        final_scores = [score * 0.5 * miners_count for score in softmax_normalize(final_scores, t=SOFTMAX_T_FINAL)]
+        final_scores = [score * (1/128) * miners_count for score in softmax_normalize(final_scores, t=SOFTMAX_T_FINAL)]
 
         # Track scores
         try: # nonessential code:
@@ -192,7 +191,7 @@ class Validator:
 
         return result
 
-    def _get_source_dataset(self) -> (PromptDataset, str, str):
+    def _get_prompt_dataset(self) -> (PromptDataset, str, str):
 
         source_lang, target_lang = self._select_lang_pair()
 
@@ -203,29 +202,45 @@ class Validator:
 
         return source_dataset, source_lang, target_lang
 
-
     def generate_cases(self, count: int=2) -> (str, str, List[str]):
+
         good_sources = []
+        okay_sources = []
         bad_sources = []
+
         max_iter = count + 4
         curr_iter = 0
 
-        source_dataset, source_lang, target_lang = self._get_source_dataset()
+        source_dataset, source_lang, target_lang = self._get_prompt_dataset()
 
         while len(good_sources) < count and curr_iter < max_iter:
             curr_iter += 1
-            starting_case = source_dataset.sample_case(source_lang)
-            prompt = self._generate_prompt(starting_case, lang=target_lang)
-            if self._is_gibberish(prompt, source_lang):
-                bad_sources.append(prompt)
+            prompt_text = source_dataset.sample_case(source_lang)
+
+            source_text = self._generate_source(prompt_text, lang=target_lang)
+
+            is_source_gibberish = self._is_gibberish(source_text, source_lang)
+
+            is_prompt_gibberish = self._is_gibberish(prompt_text, source_lang)
+
+            if is_source_gibberish:
+                # The source text contains gibberish
+                bad_sources.append(source_text)
+            if is_prompt_gibberish :
+                # The prompt contains gibberish, but source does not.
+                # We assume a poor prompt would lead to poor source text.
+                okay_sources.append(source_text)
             else:
-                good_sources.append(prompt)
-        sources = good_sources if len(good_sources) > count else [*good_sources, *bad_sources][:count]
+                # Neither prompt or source text contains gibberish
+                good_sources.append(source_text)
+
+        sources = good_sources if len(good_sources) > count else [*good_sources, *okay_sources, *bad_sources][:count]
         return source_lang, target_lang, sources
 
-    def _generate_prompt(self, text: str, lang: str = "en") -> str:
+    def _generate_source(self, text: str, lang: str = "en") -> str:
 
-        if lang in self._wenzhong_gpt2_langs:
+        if (lang in
+                self._wenzhong_gpt2_langs):
             tokens = self._wenzhong_gpt2_pipeline.tokenizer.encode(text)
 
             trim_tokens = trim_prompt(tokens, MAX_WENZONG_PROMPT_LENGTH-MAX_PROMPT_LENGTH)
@@ -247,12 +262,10 @@ class Validator:
         elif lang in self._mgpt_langs:
             tokens = self._mgpt_pipeline.tokenizer.encode(text)
 
-
             trim_tokens = trim_prompt(tokens, MAX_MGPT_PROMPT_LENGTH-MAX_PROMPT_LENGTH)
             current_token_length =  len(trim_tokens)
 
             trim_text = self._mgpt_pipeline.tokenizer.decode(trim_tokens)
-
 
             return self._mgpt_pipeline(
                 trim_text,
@@ -298,7 +311,7 @@ class Validator:
         langs_wo_prob = [lang for lang in self._langs if lang not in self._lang_probs]
         prob_per_lang = remaining_prob / len(langs_wo_prob)
         probs = {**{lang: prob_per_lang for lang in langs_wo_prob}, **self._lang_probs}
-        
+
         source_lang = np.random.choice(
             self._langs, p=[probs.get(lang) for lang in self._langs]
         ).item()
@@ -306,7 +319,7 @@ class Validator:
             [lang for lang in self._langs if lang != source_lang]
         ).item()
         return source_lang, target_lang
-    
+
     def _is_gibberish(self, text: str, lang: str) -> bool:
         """
         Filter out gibberish text based on a list of patterns and a cutoff.
@@ -324,13 +337,19 @@ class Validator:
         patterns = [emoji_pattern, invalid_pattern]
         if lang != "zh":
             patterns.append(chinese_pattern)
-        
+
         pattern_results = []
         for pattern in patterns:
             chars = "".join(re.findall(pattern, text))
             ratio = round(len(chars)/len(text), 2)
             pattern_results.append(ratio)
-        
-        if sum(pattern_results) > cutoff:
+
+        # If the sum of the ratios of pattern matches to text length is greater than the cutoff, return True
+        if (
+            sum(pattern_results) > cutoff
+            or contains_url(text)
+            or contains_author_list(text)
+            or contains_formula(text)
+        ):
             return True
         return False

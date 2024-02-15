@@ -19,23 +19,23 @@ python3 neurons/validator.py --netuid 2  --axon.port  70000 --logging.debug
 ```
  Parameters: 
 
-| Parameter          | Default             | Description                                                                                                                                                                          |
-|--------------------|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| device             | "cuda"              | "cuda" if detected else "cpu"                                                                                                                                                        |
-| max_char           | 1024                | Maximum allowed characters for translated text.                                                                                                                                      |
-| batch_size         | 2                   | The number of source texts that are sent to the miners every request. Miners by default ignore request with more than 2 source texts, so we do not recommend increasing this value   |
-| miners_per_step    | 8                   | The number of miners to query in each step                                                                                                                                           |
-| track_steps        | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                           |
-| out_dir            | "bittranslate_out/" | Output directory for tracked results.                                                                                                                                                |
-| enable_api         | False               | If set, a callable API will be activated.                                                                                                                                            |
-| score_api          | False               | If set,  responses from API requests will be used to modify scores.                                                                                                                  |
-| api_json           | "neurons/api.json"  | A path to a a config file for the API.                                                                                                                                               |
-| no_artificial_eval | False               | If set, artificial data will not be sent to miners for the purpose of scoring. We only recommend setting this to true to when debugging the API.                                     |
-| ngrok_domain       | None                | If set, expose the API over ngrok to the specified domain                                                                                                                            |
-| update_steps       | 500                 | The number of steps until we check if there has been a new version. If 0, no searching will be performed.                                                                            |
-| no_restart         | False               | If set, the process is not restarted when a new version is detected.  
-| score_logging_steps | 0                  | The number of steps until scores are logged. If 0, no logging will be performed. |         
-| score_logging_file  | "scores.csv"           | Scores will be logged to the specified file.     |                                                                             
+| Parameter          | Default             | Description                                                                                                                                                                        |
+|--------------------|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| device             | "cuda"              | "cuda" if detected else "cpu"                                                                                                                                                      |
+| max_char           | 1024                | Maximum allowed characters for translated text.                                                                                                                                    |
+| batch_size         | 2                   | The number of source texts that are sent to the miners every request. Miners by default ignore request with more than 2 source texts, so we do not recommend increasing this value |
+| miners_per_step    | 8                   | The number of miners to query in each step                                                                                                                                         |
+| track_steps        | 100                 | Number of steps before tracked scores and texts are saved.                                                                                                                         |
+| out_dir            | "bittranslate_out/" | Output directory for tracked results.                                                                                                                                              |
+| enable_api         | False               | If set, a callable API will be activated.                                                                                                                                          |
+| score_api          | False               | If set,  responses from API requests will be used to modify scores.                                                                                                                |
+| api_json           | "neurons/api.json"  | A path to a a config file for the API.                                                                                                                                             |
+| no_artificial_eval | False               | If set, artificial data will not be sent to miners for the purpose of scoring. We only recommend setting this to true to when debugging the API.                                   |
+| ngrok_domain       | None                | If set, expose the API over ngrok to the specified domain                                                                                                                          |
+| update_steps       | 500                 | The number of steps until we check if there has been a new version. If 0, no searching will be performed.                                                                          |
+| no_restart         | False               | If set, the process is not restarted when a new version is detected.                                                                                                               
+| score_logging_steps | 0                  | No logging will be performed when set to 0. Set to 1 to enable tracking scores.                                                                                                    |         
+| score_logging_file  | "scores.csv"           | Scores will be logged to the specified file.                                                                                                                                       |                                                                     
 
 ## Optional: API
 Validators have the can enable a REST API to allow them to produce translates for arbitrary text.  
