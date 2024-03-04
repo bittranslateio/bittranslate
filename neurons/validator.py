@@ -568,15 +568,15 @@ def main( config ):
 
 
                 with log_elapsed_time("set_weights"):
-                    result = subtensor.set_weights(
+                    status = subtensor.set_weights(
                         netuid = config.netuid, # Subnet to set weights on.
                         wallet = wallet, # Wallet to sign set weights using hotkey.
                         uids = processed_weight_uids, # Uids of the miners to set weights for.
                         weights = processed_weights, # Weights to set for the miners.
                         wait_for_inclusion=False,
                     )
-                if result: bt.logging.success('Successfully set weights.')
-                else: bt.logging.error('Failed to set weights.')
+                if status: bt.logging.success(f'Successfully set weights.')
+                else: bt.logging.error(f'Failed to set weights. {status}')
 
             # End the current step and prepare for the next iteration.
             step += 1

@@ -27,7 +27,6 @@ from abc import abstractmethod
 from neurons.miners.baseminer.blacklist import call_blacklist
 from neurons.miners.baseminer.config import get_config
 from neurons.miners.baseminer.priority import call_priority
-from neurons.miners.baseminer.set_weights import set_weights
 
 from .verify_data import verify_synapse_data
 
@@ -153,26 +152,7 @@ class BaseMiner:
                         f'Emission:{self.metagraph.E[self.my_subnet_uid]}'
                     )
                     bt.logging.info(log)
-                    
-                blocks_per_set_weights = 100
 
-
-                if (
-                    current_block - last_updated_block 
-                    >= blocks_per_set_weights
-                ):
-                    if self.config.disable_set_weight:
-                        bt.logging.info("Not setting weights")
-                    else:
-                        # Miner sets its own weights.
-                        set_weights(
-                            subtensor=self.subtensor,
-                            netuid=self.config.netuid,
-                            uid=self.my_subnet_uid,
-                            wallet=self.wallet,
-                        )
-                    last_updated_block = current_block
-                    
                 step += 1
                 # Sleep is not necessary here 
                 # because syncing the metagraph

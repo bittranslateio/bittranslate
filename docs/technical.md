@@ -53,7 +53,12 @@ Validators use text from following datasets as a prompt for a text generation mo
 - **Hugging Face:** [IDEA-CCNL/Wenzhong-GPT2-110M](https://huggingface.co/IDEA-CCNL/Wenzhong-GPT2-110M)
 - **Purpose:** Primarily used for producing Chinese text, serving a similar function as mGPT.
 
-### M2M
+### M2M-100
 - **Paper:** [Beyond English-Centric Multilingual Machine Translation](https://arxiv.org/pdf/2010.11125.pdf)
 - **Hugging Face:** [facebook/m2m100_1.2B](https://huggingface.co/facebook/m2m100_1.2B)
 - **Purpose:** The default model for miners to perform translations.
+
+### Aya
+- **Paper:** [Aya Model: An Instruction Finetuned Open-Access Multilingual Language Model](https://arxiv.org/pdf/2402.07827.pdf)
+- **Hugging Face:** [CohereForAI/aya-101](https://huggingface.co/CohereForAI/aya-101)
+- **Purpose:** An alternative model over M2M to perform translations.

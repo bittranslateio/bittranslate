@@ -3,21 +3,24 @@ from neurons.miners.baseminer.baseminer import BaseMiner
 from neurons.miners.baseminer.log_snippet import log_snippet_of_texts
 from neurons.protocol import Translate
 from transformers import (
-    M2M100ForConditionalGeneration,
-    M2M100Tokenizer)
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    T5ForConditionalGeneration)
+
 import argparse
 import bittensor as bt
 from bittranslate.logging import log_elapsed_time
 from bittranslate import MiningTracker
+from bittranslate.constants import LANGUAGE_MAPPING
 
-class M2MMiner(BaseMiner):
+class AyaMiner(BaseMiner):
     @classmethod
     def add_args(cls, parser: argparse.ArgumentParser) -> None:
 
         parser.add_argument(
             "--model_name",
             type=str,
-            default="facebook/m2m100_1.2B",
+            default="CohereForAI/aya-101",
             help="The Hugging Face ID or path to a model and tokenizer.",
         )
         parser.add_argument(
@@ -96,27 +99,18 @@ class M2MMiner(BaseMiner):
             help="Prevents n-grams of the given value from repeating",
         )
 
-        ## Will be removed soon
-        parser.add_argument(
-            "--disable_set_weight",
-            action="store_true",
-            help="Legacy. Will be removed soon.")
-
     def __init__(self):
         super().__init__()
 
-        if self.config.disable_set_weight:
-            bt.logging.warning("The --disable_set_weight flag will be removed in a future update as weights are never set. Please stop using it.")
-
         bt.logging.info(f"Loading model {repr(self.config.model_name)}")
-        self.model = M2M100ForConditionalGeneration.from_pretrained(
+        self.model: T5ForConditionalGeneration = AutoModelForSeq2SeqLM.from_pretrained(
             self.config.model_name
         )
 
         if self.config.device != "cpu":
             self.model.to(self.config.device)
 
-        self.tokenizer = M2M100Tokenizer.from_pretrained(self.config.model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config.model_name)
 
         self._langs =  ["ar", "bg", "de", "el", "en", "et",
                         "es", "fa", "fr", "fi", "hi", "hu", "it", "ka", "ko", "pl", "pt",
@@ -146,32 +140,29 @@ class M2MMiner(BaseMiner):
 
         log_snippet_of_texts(synapse.source_texts, "synapse.source_texts")
 
+        # todo add something like "Translate English to French: "
+
         # Tokenize the source texts,
         # as preparation for the text-to-text model.
         with log_elapsed_time("tokenize"):
-            source_tok = self.tokenizer(
-                synapse.source_texts,
+            source_tok = self.tokenizer.encode(
+                f"Translate {LANGUAGE_MAPPING[source_lang]} to {LANGUAGE_MAPPING[target_lang]}: {synapse.source_texts}",
                 return_tensors="pt",
                 truncation=True,
                 padding=True,
                 max_length=self.config.max_length,
             ).to(self.model.device)
 
-
         with log_elapsed_time("model_generate"):
             # Check if passed arguments exist in config and use them
-
             generated_tokens = self.model.generate(
-                **source_tok,
+                source_tok,
+                max_new_tokens=self.config.max_length,
                 do_sample=self.config.do_sample,
                 temperature=self.config.temperature,
                 top_k=self.config.top_k,
                 no_repeat_ngram_size=self.config.no_repeat_ngram_size,
                 num_beams=self.config.num_beams,
-                # To indicate to the language model
-                # that we want to translate to a particular language,
-                # we set the Beginning-Of-Stream (BOS) token.
-                forced_bos_token_id=self.tokenizer.get_lang_id(target_lang),
             )
 
         with log_elapsed_time("detokenize"):
@@ -205,4 +196,4 @@ class M2MMiner(BaseMiner):
         return output_synapse
 
 if __name__ == "__main__":
-    M2MMiner().run()
+    AyaMiner().run()

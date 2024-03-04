@@ -15,12 +15,13 @@ python3 simulate/run_miner --rounds 100
 
 ### Script 
 
-| Parameter  | Default | Description                                              |
-|------------|---------|----------------------------------------------------------|
-| rounds     | 100     | The number of cases that will be produced evaluated      |
-| val_device | "cuda"  | What device to use for the the validator's Reward Models | 
-| save_data  | None    | A path to a JSON file to save generated  data            | 
-| load_data  | None    | A path to a JSON file to load  data                      | 
+| Parameter  | Default | Description                                                 |
+|------------|---------|-------------------------------------------------------------|
+| rounds     | 100     | The number of cases that will be produced evaluated         |
+| val_device | "cuda"  | What device to use for the the validator's Reward Models    | 
+| save_data  | None    | A path to a JSON file to save generated  data               | 
+| load_data  | None    | A path to a JSON file to load  data                         | 
+| type       | "m2m"   | The type of miner to be used for the evaluation. [m2m, aya] | 
 
 
 ### M2MMiner
@@ -36,12 +37,12 @@ To improve the consistency of your runs you can save the data generated from you
 
 ### First run: 
 ```bash
-python3 simulate/run_miner --rounds 100 --save_data "saved_data.json"
+python3 simulate/run_miner.py --rounds 100 --save_data "saved_data.json"
 ```
 
 ### Subsequent runs:
 ```bash
-python3 simulate/run_miner --load_data "saved_data.json"
+python3 simulate/run_miner.py --load_data "saved_data.json"
 ```
 
 
