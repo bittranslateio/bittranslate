@@ -12,6 +12,7 @@ import bittensor as bt
 from bittranslate.logging import log_elapsed_time
 from bittranslate import MiningTracker
 from bittranslate.constants import LANGUAGE_MAPPING
+import torch
 
 class AyaMiner(BaseMiner):
     @classmethod
@@ -104,7 +105,8 @@ class AyaMiner(BaseMiner):
 
         bt.logging.info(f"Loading model {repr(self.config.model_name)}")
         self.model: T5ForConditionalGeneration = AutoModelForSeq2SeqLM.from_pretrained(
-            self.config.model_name
+            self.config.model_name,
+            torch_dtype=torch.float16
         )
 
         if self.config.device != "cpu":
