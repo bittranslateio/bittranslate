@@ -24,9 +24,13 @@ class BitTranslateDataset(PromptDataset):
     def __init__(self):
         super().__init__()
 
+        # Load the dataset and filter out samples containing URLs during initialization
         self._datasets = {
-            language: load_dataset(lang_details['dataset_name'], split='train')
+            language: load_dataset(lang_details['dataset_name'], split='train').filter(
+                lambda row: not any(url in row[prompt_feature] for url in ("http", "https"))
+            )
             for language, lang_details in language_details_by_code.items()
+            for prompt_feature in lang_details['features']
         }
 
     def sample_case(self, language="fi") -> str:
@@ -37,5 +41,4 @@ class BitTranslateDataset(PromptDataset):
             )
 
         row = random.choice(self._datasets[language])
-        # The prompt category is always second index of the list under the the features key.
         return row[language_details_by_code[language]['features'][1]]

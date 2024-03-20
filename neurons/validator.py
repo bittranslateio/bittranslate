@@ -353,7 +353,7 @@ def main( config ):
     scores =  torch.full_like(metagraph.S, fill_value=1/256,  dtype=torch.float32)
     bt.logging.info(f"Weights: {scores}")
 
-    alpha = 0.98
+    alpha = 0.995
 
     ## Custom Initialization
     bt.logging.info(f"Loading validator components...")
