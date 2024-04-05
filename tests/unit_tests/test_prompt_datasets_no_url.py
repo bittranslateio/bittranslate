@@ -40,7 +40,7 @@ def check_dataset_sample(dataset_class: object, valid_langs: list):
         (Exams, ["bg", "hu", "it", "pl", "pt", "tr", "vi"]),  # Test Exams
         (XQuAD, ["ar", "de", "el", "en", "es", "hi", "ro", "ru", "th", "tr", "vi", "zh"]),  # Test XQuAD
         (MKqa, ["fr"]),  # Test MKqa
-        (BitTranslateDataset, ["et", "fa", "fi", "fr", "ko", "sv", "uk"]),  # Test BitTranslateDataset
+        (BitTranslateDataset, ["et", "fa", "fi", "fr", "ja", "ka", "ko", "sv", "uk"]),  # Test BitTranslateDataset
     ],
 )
 def test_dataset_samples(dataset_class, valid_langs):

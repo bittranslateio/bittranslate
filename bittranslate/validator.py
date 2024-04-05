@@ -38,9 +38,9 @@ class Validator:
         self._wenzhong_gpt2_pipeline = pipeline("text-generation", "IDEA-CCNL/Wenzhong-GPT2-110M", device=device)
 
         self._langs =  ["ar", "bg", "de", "el", "en",
-                        "es", "et", "fa", "fi", "fr", "hi", "hu", "it", "ko", "pl", "pt",
+                        "es", "et", "fa", "fi", "fr", "hi", "hu", "it", "ja", "ka", "ko", "pl", "pt",
                         "ro", "ru", "sv", "th",  "tr", "uk", "vi",
-                        "zh"]
+                        "zh" ]
 
         self._wenzhong_gpt2_langs = ["zh"]
         self._mgpt_langs = [lang for lang in self._langs if lang not in self._wenzhong_gpt2_langs]
@@ -81,6 +81,8 @@ class Validator:
                 "hi": [xquad],
                 "hu": [exams],
                 "it": [exams],
+                "ja": [bittranslate_dataset],
+                "ka": [bittranslate_dataset],
                 "ko": [bittranslate_dataset],
                 "pl": [exams],
                 "pt": [exams],

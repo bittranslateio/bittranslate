@@ -12,9 +12,12 @@ language_details_by_code = {
            'features': ['act', 'prompt']},
     'fi': {'language': 'Finnish', 'dataset_name': 'BitTranslate/chatgpt-prompts-Finnish', 'features': ['act', 'prompt']},
     'fr': {'language': 'French', 'dataset_name': 'BitTranslate/chatgpt-prompts-French', 'features': ['act', 'prompt']},
+    'ja': {'language': 'Japanese', 'dataset_name': 'BitTranslate/chatgpt-prompts-Japanese',
+           'features': ['人物', 'プロンプト']},
+    "ka":  {'language': 'Georgian', 'dataset_name': 'BitTranslate/chatgpt-prompts-Georgian', 'features': ['act', 'prompt']},
     'ko': {'language': 'Korean', 'dataset_name': 'BitTranslate/chatgpt-prompts-Korean', 'features': ['역할', '프롬프트']},
     'sv': {'language': 'Swedish', 'dataset_name': 'BitTranslate/chatgpt-prompts-Swedish', 'features': ['act', 'prompt']},
-    'uk': {'language': 'Ukrainian', 'dataset_name': 'BitTranslate/chatgpt-prompts-Ukrainian', 'features': ['дія', 'запит']},
+    'uk': {'language': 'Ukrainian', 'dataset_name': 'BitTranslate/chatgpt-prompts-Ukrainian', 'features': ['дія', 'запит']}
 }
 
 

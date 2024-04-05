@@ -31,6 +31,8 @@ LANGUAGE_MAPPING = {
     "hu": "Hungarian",
     "it": "Italian",
     "ka": "Georgian",
+    "ja": "Japanese",
+    "ka": "Georgian",
     "ko": "Korean",
     "pl": "Polish",
     "pt": "Portuguese",

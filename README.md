@@ -17,11 +17,11 @@ The validator then evaluates the outputted translations using two Reward Models 
 
 The subnet has been designed to be able to accommodate numerous translation pairs. 
 
-**Supported Languages (24):**
+**Supported Languages (26):**
 <pre>
-<li><strong>European Languages:</strong> 🇧🇬 Bulgarian (bg), 🇬🇧 English (en), 🇫🇷 French (fr), 🇩🇪 German (de), 🇬🇷 Greek (el), 🇭🇺 Hungarian (hu), 🇮🇹 Italian (it), 🇵🇱 Polish (pl), 🇵🇹 Portuguese (pt), 🇷🇴 Romanian (ro), 🇷🇺 Russian (ru), 🇪🇸 Spanish (es), 🇸🇪 Swedish (sv), 🇺🇦 Ukrainian (uk), 🇪🇪 Estonian (et), 🇫🇮 Finnish (fi).
+<li><strong>European Languages:</strong> 🇧🇬 Bulgarian (bg), 🇬🇧 English (en), 🇫🇷 French (fr), 🇩🇪 German (de),  🇬🇷 Greek (el), 🇭🇺 Hungarian (hu), 🇮🇹 Italian (it), 🇬🇪(ka), 🇵🇱 Polish (pl), 🇵🇹 Portuguese (pt), 🇷🇴 Romanian (ro), 🇷🇺 Russian (ru), 🇪🇸 Spanish (es), 🇸🇪 Swedish (sv), 🇺🇦 Ukrainian (uk), 🇪🇪 Estonian (et), 🇫🇮 Finnish (fi).
 </li>
-<li><strong>Asian Languages:</strong> 🇦🇪 Arabic (ar), 🇨🇳 Chinese (zh), 🇮🇳 Hindi (hi), 🇰🇷 Korean (ko), 🇮🇷 Persian (fa), 🇹🇭 Thai (th), 🇹🇷 Turkish (tr), 🇻🇳 Vietnamese (vi).
+<li><strong>Asian Languages:</strong> 🇦🇪 Arabic (ar), 🇨🇳 Chinese (zh), 🇮🇳 Hindi (hi), 🇯🇵 Japan (ja), 🇰🇷 Korean (ko), 🇮🇷 Persian (fa), 🇹🇭 Thai (th), 🇹🇷 Turkish (tr), 🇻🇳 Vietnamese (vi).
 </pre>
 
 We have plans to soon support many other languages.
@@ -40,4 +40,4 @@ We have plans to soon support many other languages.
 
 ## 🖥️ &nbsp;Web App: https://bittranslate.io
 
-Translate text amongst 24 languages with 276 language pairs on our website!
+Translate text amongst 18 languages with 153 language pairs on our website!

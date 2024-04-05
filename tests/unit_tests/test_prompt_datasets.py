@@ -63,7 +63,7 @@ def test_mkqa():
 
 def test_bittranslate():
     bittranslate_dataset = BitTranslateDataset()
-    valid_langs = ["et", "fa", "fi", "fr", "ko", "sv", "uk"]
+    valid_langs = ["et", "fa", "fi", "fr", "ja", "ka", "ko", "sv", "uk"]
 
     for expect_lang in valid_langs:
         result = bittranslate_dataset.sample_case(expect_lang)
